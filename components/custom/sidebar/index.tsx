@@ -3,16 +3,10 @@
 //* Libraries Imports
 import Image from "next/image"
 
-//* Constants Imports
-import { itemsForRole } from "@/constants"
-
 //* Components Imports
 import { Item } from "./item"
 
 export function Navbar() {
-
-    const typeUser = "admin" // TODO: pegar do contexto do usuário logado
-
     return (
         <div className="h-screen w-[280px] p-2 z-20">
             <div className="bg-foreground
@@ -22,9 +16,7 @@ export function Navbar() {
                     <h1>Nome do Projeto</h1>
                 </div>
                 <div className="flex flex-col gap-2 pt-10">
-                    {itemsForRole[typeUser]?.map((role) => (
-                        <Item key={role.label} role={role} />
-                    ))}
+
                 </div>
 
             </div>
