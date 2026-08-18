@@ -1,5 +1,9 @@
 //* Components Imports
-import Avatar from "@/components/ui/avatar";
+import {
+  AvatarBadge,
+  AvatarFallback,
+  AvatarRoot,
+} from "@/components/ui/avatar";
 import Badge from "@/components/ui/badge";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -75,12 +79,12 @@ export default function LandingPage() {
             <Card.CardContent className="space-y-3 px-5 pb-5 sm:px-7 sm:pb-7">
               {["Marina Costa", "Lucas Almeida", "Ana Beatriz"].map((name, index) => (
                 <div key={name} className="flex items-center gap-3 rounded-2xl bg-[#f5f7f6] p-3">
-                  <Avatar.AvatarRoot size="lg" className="rounded-xl bg-[#d8efe5]">
-                    <Avatar.AvatarFallback className="rounded-xl bg-[#d8efe5] text-sm font-bold text-[#245246]">
+                  <AvatarRoot size="lg" className="rounded-xl bg-[#d8efe5]">
+                    <AvatarFallback className="rounded-xl bg-[#d8efe5] text-sm font-bold text-[#245246]">
                       {name.split(" ").map((part) => part[0]).join("")}
-                    </Avatar.AvatarFallback>
-                    <Avatar.AvatarBadge className={index === 1 ? "bg-[#f0ad58]" : "bg-[#5ebc8e]"} />
-                  </Avatar.AvatarRoot>
+                    </AvatarFallback>
+                    <AvatarBadge className={index === 1 ? "bg-[#f0ad58]" : "bg-[#5ebc8e]"} />
+                  </AvatarRoot>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{name}</p>
                     <p className="mt-0.5 text-xs text-[#71837d]">Cliente cadastrado</p>
