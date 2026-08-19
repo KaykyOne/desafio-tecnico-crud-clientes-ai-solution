@@ -30,15 +30,29 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
+          "--normal-bg": "#ffffff",
+          "--normal-text": "#183d34",
+          "--normal-border": "#dce8e2",
+          "--success-bg": "#eaf7f0",
+          "--success-text": "#197967",
+          "--success-border": "#cce7dc",
+          "--error-bg": "#fff0ed",
+          "--error-text": "#a25042",
+          "--error-border": "#f0d8d3",
+          "--warning-bg": "#fff7e8",
+          "--warning-text": "#95651c",
+          "--warning-border": "#f2dfb4",
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast !rounded-2xl !shadow-[0_18px_45px_-24px_rgba(24,61,52,0.55)]",
+          title: "!font-bold",
+          description: "!text-[#71837d]",
+          success: "!border-[#cce7dc] !bg-[#eaf7f0] !text-[#197967]",
+          error: "!border-[#f0d8d3] !bg-[#fff0ed] !text-[#a25042]",
+          warning: "!border-[#f2dfb4] !bg-[#fff7e8] !text-[#95651c]",
         },
       }}
       {...props}
