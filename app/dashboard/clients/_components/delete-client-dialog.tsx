@@ -19,14 +19,14 @@ export default function DeleteClientDialog({ open, clientName, isDeleting, onOpe
 
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-[#f0d8d3] bg-[#fffaf9] sm:max-w-md">
+      <DialogContent className="bg-background sm:max-w-md p-10">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-[-0.04em] text-[#8f3f35]">Excluir cliente?</DialogTitle>
-          <DialogDescription className="px-0 text-[#806e69]">Essa ação removerá <strong>{clientName}</strong> da sua carteira e não pode ser desfeita.</DialogDescription>
+          <DialogTitle className="text-xl font-bold tracking-[-0.04em]">Excluir cliente?</DialogTitle>
+          <DialogDescription className="px-0">Essa ação removerá <strong>{clientName}</strong> da sua carteira e não pode ser desfeita.</DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4 border-t-0 bg-transparent p-0">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>Cancelar</Button>
-          <Button type="button" onClick={() => void handleConfirm()} disabled={isDeleting} className="bg-[#b45d4d] text-white hover:bg-[#984b3d]">{isDeleting ? "Excluindo..." : "Excluir cliente"}</Button>
+          <Button type="button" variant="destructive" onClick={() => void handleConfirm()} disabled={isDeleting}>{isDeleting ? "Excluindo..." : "Excluir cliente"}</Button>
         </DialogFooter>
       </DialogContent>
     </DialogRoot>
