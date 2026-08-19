@@ -32,10 +32,10 @@ export default function DashboardSidebar() {
         className="flex shrink-0 items-center gap-3 px-1"
         aria-label="Ir para a visão geral"
       >
-        <span className="flex size-10 items-center justify-center rounded-2xl bg-[#183d34] text-sm font-black tracking-[-0.08em] text-[#eef8f2] shadow-[0_10px_24px_-12px_rgba(24,61,52,0.8)]">
+        <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black tracking-[-0.08em] text-primary-foreground">
           CA
         </span>
-        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-[#183d34]">
+        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-foreground">
           ClienteApp
         </span>
       </Link>
@@ -51,8 +51,8 @@ export default function DashboardSidebar() {
               size="sm"
               render={<Link href={href} aria-current={isActive ? "page" : undefined} />}
               className={cn(
-                "h-10 shrink-0 justify-start gap-3 rounded-xl px-3 text-[#71837d] hover:bg-[#eef5f0] hover:text-[#183d34]",
-                isActive && "bg-[#e7f2eb] font-bold text-[#183d34] shadow-sm ring-1 ring-[#d6e8dc]"
+                "h-10 shrink-0 justify-start gap-3 rounded-md px-3 text-muted-foreground",
+                isActive && "bg-accent font-bold text-accent-foreground shadow-sm"
               )}
             >
               <Icon />
@@ -63,13 +63,13 @@ export default function DashboardSidebar() {
       </nav>
 
       <div className="mt-auto">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#dce8e2] bg-white p-3">
-          <AvatarRoot size="sm" className="bg-[#dcebe2] text-[#183d34] ring-2 ring-white">
+        <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+          <AvatarRoot size="sm" className="bg-muted text-foreground ring-2 ring-background">
             <AvatarFallback>CA</AvatarFallback>
           </AvatarRoot>
           <div className="min-w-0">
-            <p className="truncate text-xs font-bold text-[#183d34]">Minha conta</p>
-            <p className="truncate text-[0.68rem] text-[#8a9a93]">ClienteApp</p>
+            <p className="truncate text-xs font-bold text-foreground">Minha conta</p>
+            <p className="truncate text-[0.68rem] text-muted-foreground">ClienteApp</p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export default function DashboardSidebar() {
           size="sm"
           disabled={isLoading}
           onClick={() => void logout()}
-          className="mt-3 h-9 w-full justify-start gap-3 rounded-xl px-3 text-[#8a9a93] hover:bg-[#fff4f1] hover:text-[#b45d4d]"
+          className="mt-3 h-9 w-full justify-start gap-3 rounded-md px-3 text-muted-foreground"
         >
           <LogOut />
           <span>{isLoading ? "Saindo..." : "Sair"}</span>

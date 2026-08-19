@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { supabase } from "./supabase";
@@ -20,6 +21,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export function useProfile() {
+  const router = useRouter();
   const [profile, setProfile] = useState<ProfileFormData>({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,11 +97,27 @@ export function useProfile() {
 
       if (email !== (currentUser.user.email ?? "")) attributes.email = email;
       if (password) attributes.password = password;
+      const requiresNewLogin = Boolean(attributes.email || attributes.password);
 
       const { error } = await supabase.auth.updateUser(attributes);
       if (error) throw error;
 
       setProfile((current) => ({ ...current, name, email, password: "" }));
+
+      if (requiresNewLogin) {
+        const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+
+        if (signOutError) {
+          console.error("Erro ao encerrar a sessão após alteração sensível:", signOutError.message);
+        }
+
+        toast.success("Dados atualizados", {
+          description: "Por segurança, entre novamente com seus novos dados.",
+        });
+        router.replace("/login");
+        return true;
+      }
+
       toast.success("Dados atualizados", {
         description: attributes.email
           ? "Confira seu e-mail para confirmar a alteração do endereço."

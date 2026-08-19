@@ -95,6 +95,8 @@ function CarouselRoot({
 
   React.useEffect(() => {
     if (!api) return
+    // The initial sync is required to expose the carousel's current position.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)

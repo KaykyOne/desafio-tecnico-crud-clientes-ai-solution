@@ -49,7 +49,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         classNames: {
           toast: "cn-toast !rounded-2xl !shadow-[0_18px_45px_-24px_rgba(24,61,52,0.55)]",
           title: "!font-bold",
-          description: "!text-[#71837d]",
+          description: "!text-black",
           success: "!border-[#cce7dc] !bg-[#eaf7f0] !text-[#197967]",
           error: "!border-[#f0d8d3] !bg-[#fff0ed] !text-[#a25042]",
           warning: "!border-[#f2dfb4] !bg-[#fff7e8] !text-[#95651c]",
