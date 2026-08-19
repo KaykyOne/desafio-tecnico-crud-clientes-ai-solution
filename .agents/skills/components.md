@@ -1,0 +1,1 @@
+Sempre use, se possivel, os componentes do shadcn do projeto, para reaproveitar os estilos e funcionalidades já implementadas. Isso ajuda a manter a consistência visual e a reduzir o tempo de desenvolvimento, além de facilitar a manutenção do código.

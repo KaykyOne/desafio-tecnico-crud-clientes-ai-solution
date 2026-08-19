@@ -6,7 +6,7 @@ import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar"
 
 import { cn } from "@/lib/utils"
 import {
-  DropdownMenu,
+  DropdownMenuRoot,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -35,8 +35,8 @@ function MenubarRoot({ className, ...props }: MenubarPrimitive.Props) {
   )
 }
 
-function MenubarMenu({ ...props }: React.ComponentProps<typeof DropdownMenu>) {
-  return <DropdownMenu data-slot="menubar-menu" {...props} />
+function MenubarMenu({ ...props }: React.ComponentProps<typeof DropdownMenuRoot>) {
+  return <DropdownMenuRoot data-slot="menubar-menu" {...props} />
 }
 
 function MenubarGroup({
