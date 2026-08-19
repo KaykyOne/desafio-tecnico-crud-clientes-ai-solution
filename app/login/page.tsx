@@ -1,9 +1,12 @@
+"use client";
+
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import LoginForm, { LoginBrand } from "./login-form";
+import AuthBrand from "@/app/_components/auth-brand";
+import LoginForm from "./_components/login-form";
 
 export default function LoginPage() {
   return (
@@ -12,7 +15,7 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute -bottom-28 -left-24 -z-10 h-80 w-80 rounded-full bg-[#f7dfbd] blur-3xl" />
 
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between">
-        <LoginBrand compact />
+        <AuthBrand compact />
         <Button
           render={<Link href="/" />}
           variant="ghost"
@@ -35,7 +38,7 @@ export default function LoginPage() {
             Entre para acompanhar sua operação, organizar contatos e manter sua equipe em movimento.
           </p>
           <div className="mt-9">
-            <LoginBrand />
+            <AuthBrand />
           </div>
         </div>
 

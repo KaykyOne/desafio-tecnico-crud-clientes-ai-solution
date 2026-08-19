@@ -1,3 +1,5 @@
+"use client";
+
 //* Components Imports
 import {
   AvatarBadge,
@@ -9,6 +11,7 @@ import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 
 //* Libraries Imports
+
 import Link from "next/link";
 import { ArrowUpRight, UsersRound } from "lucide-react";
 

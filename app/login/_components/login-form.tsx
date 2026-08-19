@@ -1,40 +1,23 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { UsersRound } from "lucide-react";
+import type { FormEvent } from "react";
+import { useState } from "react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { useLogin } from "@/hooks/use-login";
+import { toast } from "sonner";
 
 export default function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useLogin();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setError("Não foi possível entrar. Confira seu e-mail e senha.");
-      setIsLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
-    router.refresh();
+    void login({ email, password });
   }
 
   return (
@@ -55,7 +38,6 @@ export default function LoginForm() {
           </Label>
           <Input
             id="email"
-            name="email"
             type="email"
             autoComplete="email"
             placeholder="seu@email.com"
@@ -72,7 +54,6 @@ export default function LoginForm() {
           </Label>
           <Input
             id="password"
-            name="password"
             type="password"
             autoComplete="current-password"
             placeholder="••••••••"
@@ -85,12 +66,6 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {error ? (
-        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-          {error}
-        </p>
-      ) : null}
-
       <Button
         type="submit"
         disabled={isLoading}
@@ -99,34 +74,5 @@ export default function LoginForm() {
         {isLoading ? "Entrando..." : "Entrar"}
       </Button>
     </form>
-  );
-}
-
-export function LoginBrand({ compact = false }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2.5 font-semibold tracking-tight text-[#12231f]">
-        <span className="grid size-9 place-items-center rounded-xl bg-[#183d34] text-white">
-          <UsersRound className="size-4" strokeWidth={2.5} />
-        </span>
-        ClienteApp
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex max-w-[22rem] flex-col items-start">
-      <div className="mb-5 grid size-10 place-items-center rounded-xl bg-[#d8efe5] text-[#245246]">
-        <UsersRound className="size-5" strokeWidth={2.3} />
-      </div>
-      <p className="text-[1.25rem] font-bold tracking-[-0.04em] text-[#12231f]">ClienteApp</p>
-      <p className="mt-3 max-w-[17rem] text-[0.78rem] font-semibold leading-5 text-[#526660]">
-        A plataforma simples para gerenciar seus clientes com clareza e eficiência.
-      </p>
-      <div className="mt-6 text-[0.68rem] leading-4 text-[#71837d]">
-        <p className="font-semibold text-[#397563]">“Organize. Gerencie. Cresça.”</p>
-        <p>Soluções simples para equipes reais.</p>
-      </div>
-    </div>
   );
 }
