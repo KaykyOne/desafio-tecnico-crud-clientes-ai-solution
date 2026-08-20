@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LogOut, Settings, UsersRound } from "lucide-react";
+import { KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound } from "lucide-react";
 
 import { AvatarFallback, AvatarRoot } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
+  { href: "/dashboard/tasks", label: "Tarefas", icon: KanbanSquare },
   { href: "/dashboard/settings", label: "Configurações", icon: Settings },
 ];
 

@@ -9,6 +9,7 @@ ClienteApp é uma aplicação web para gerenciamento de clientes. A plataforma p
 - Proteção da área autenticada.
 - Dashboard com navegação lateral.
 - CRUD de clientes: criar, listar, editar e excluir.
+- Kanban de tarefas: criar, editar, excluir e mover tarefas entre os estados pendente, em andamento e concluída.
 - Busca por nome, contato ou status.
 - Indicadores de clientes ativos e inativos.
 - Configurações de nome, e-mail e senha.
@@ -23,6 +24,7 @@ ClienteApp é uma aplicação web para gerenciamento de clientes. A plataforma p
 | `/login` | Login do usuário |
 | `/dashboard` | Visão geral da área autenticada |
 | `/dashboard/clients` | Gerenciamento de clientes |
+| `/dashboard/tasks` | Board Kanban para gerenciamento de tarefas |
 | `/dashboard/settings` | Configurações da conta |
 
 ## Stack
@@ -90,6 +92,7 @@ public/               Arquivos estáticos
 | Pacote | Uso resumido |
 | --- | --- |
 | `@base-ui/react` | Primitives acessíveis para botões, inputs, dialogs e outros componentes de UI. |
+| `@dnd-kit/core` e `@dnd-kit/sortable` | Drag-and-drop acessível para o board de tarefas. |
 | `@supabase/ssr` | Suporte do Supabase para cenários SSR e integração com frameworks. |
 | `@supabase/supabase-js` | Cliente JavaScript usado para autenticação e operações no Supabase. |
 | `class-variance-authority` | Criação de variantes tipadas para componentes como Button e Badge. |
