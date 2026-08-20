@@ -9,7 +9,7 @@ ClienteApp é uma aplicação web para gerenciamento de clientes. A plataforma p
 - Proteção da área autenticada.
 - Dashboard com navegação lateral.
 - CRUD de clientes: criar, listar, editar e excluir.
-- Kanban de tarefas: criar, editar, excluir e mover tarefas entre os estados pendente, em andamento e concluída.
+- Kanban de tarefas: criar, editar, excluir, mover entre colunas configuráveis e gerenciar as próprias colunas.
 - Busca por nome, contato ou status.
 - Indicadores de clientes ativos e inativos.
 - Configurações de nome, e-mail e senha.

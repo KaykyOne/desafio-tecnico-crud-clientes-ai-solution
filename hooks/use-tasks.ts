@@ -7,7 +7,6 @@ import { toast } from "sonner";
 //* Services Imports
 import { supabase } from "./supabase";
 
-export type TaskStatus = "pending" | "in_progress" | "completed";
 export type TaskPriority = "low" | "medium" | "high";
 
 export type TaskRecord = {
@@ -16,7 +15,7 @@ export type TaskRecord = {
   title: string;
   description: string | null;
   priority: TaskPriority;
-  status: TaskStatus;
+  column_id: string;
   average_duration_minutes: number;
   due_date: string;
   created_at: string;
@@ -27,7 +26,7 @@ export type TaskInput = {
   title: string;
   description: string;
   priority: TaskPriority;
-  status: TaskStatus;
+  column_id: string;
   average_duration_minutes: number;
   due_date: string;
 };
@@ -65,7 +64,7 @@ export function useTasks() {
       const userId = await getAuthenticatedUserId();
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, user_id, title, description, priority, status, average_duration_minutes, due_date, created_at, updated_at")
+        .select("id, user_id, title, description, priority, column_id, average_duration_minutes, due_date, created_at, updated_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -131,17 +130,17 @@ export function useTasks() {
     }
   }
 
-  async function updateTaskStatus(id: string, status: TaskStatus) {
+  async function updateTaskColumn(id: string, columnId: string) {
     const previousTasks = tasks;
     const task = previousTasks.find((currentTask) => currentTask.id === id);
 
-    if (!task || task.status === status) return true;
+    if (!task || task.column_id === columnId) return true;
 
-    setTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === id ? { ...currentTask, status } : currentTask));
+    setTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === id ? { ...currentTask, column_id: columnId } : currentTask));
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("tasks").update({ status }).eq("id", id).eq("user_id", userId);
+      const { error } = await supabase.from("tasks").update({ column_id: columnId }).eq("id", id).eq("user_id", userId);
 
       if (error) throw error;
       return true;
@@ -150,7 +149,7 @@ export function useTasks() {
       toast.error("Não foi possível mover a tarefa", {
         description: getSupabaseErrorMessage(error, "A alteração foi desfeita. Tente novamente."),
       });
-      console.error("Erro ao atualizar status da tarefa:", error);
+      console.error("Erro ao atualizar coluna da tarefa:", error);
       return false;
     }
   }
@@ -177,5 +176,5 @@ export function useTasks() {
     }
   }
 
-  return { tasks, isLoading, isSaving, deletingTaskId, createTask, updateTask, updateTaskStatus, deleteTask, refreshTasks: fetchTasks };
+  return { tasks, isLoading, isSaving, deletingTaskId, createTask, updateTask, updateTaskColumn, deleteTask, refreshTasks: fetchTasks };
 }

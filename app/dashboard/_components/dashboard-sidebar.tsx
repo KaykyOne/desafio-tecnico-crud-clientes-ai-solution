@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useLogout } from "@/hooks/use-logout";
 import { cn } from "@/lib/utils";
 
+import ThemeToggle from "./theme-toggle";
+
 const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
@@ -63,7 +65,9 @@ export default function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-auto space-y-3">
+        <ThemeToggle />
+
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <AvatarRoot size="sm" className="bg-muted text-foreground ring-2 ring-background">
             <AvatarFallback>CA</AvatarFallback>
