@@ -40,11 +40,11 @@ Arquivos fixos, gerados ou puramente de configuração podem ser ignorados.
 
 O padrão principal para comentários organizacionais é:
 
-//* Nome da seção
+//\* Nome da seção
 
 No PHP:
 
-//* Nome da seção
+//\* Nome da seção
 
 Esses comentários servem para separar responsabilidades visualmente.
 
@@ -77,7 +77,7 @@ Exemplo:
 
 "use client"
 
-//* Components Imports
+//\* Components Imports
 import Button from "@/components/ui/button";
 
 Não utilizar "use client" se o componente puder continuar sendo um Server Component.
@@ -102,7 +102,7 @@ Porém, se houver ao menos um import da categoria, o comentário da seção é o
 
 Components Imports
 
-//* Components Imports
+//\* Components Imports
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Card from "@/components/ui/card";
@@ -113,7 +113,7 @@ Libraries Imports
 
 Dependências externas e recursos do framework.
 
-//* Libraries Imports
+//\* Libraries Imports
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserKeyIcon } from "lucide-react";
@@ -121,19 +121,19 @@ import { useQuery } from "@tanstack/react-query";
 
 Hooks Imports
 
-//* Hooks Imports
+//\* Hooks Imports
 import { useLogin } from "@/hooks/auth/use-login";
 import { useCurrentUser } from "@/hooks/auth/use-current-user";
 
 Services Imports
 
-//* Services Imports
+//\* Services Imports
 import { login } from "@/services/auth-service";
 import { getUsers } from "@/services/user-service";
 
 Schemas Imports
 
-//* Schemas Imports
+//\* Schemas Imports
 import { loginSchema } from "@/schemas/auth";
 import { userSchema } from "@/schemas/user";
 
@@ -141,19 +141,19 @@ Types Imports
 
 Imports usados apenas como tipos devem utilizar import type.
 
-//* Types Imports
+//\* Types Imports
 import type { UserType } from "@/schemas/user";
 import type { LoginPayload } from "@/services/auth-service";
 
 Constants Imports
 
-//* Constants Imports
+//\* Constants Imports
 import roles from "@/constants/roles";
 import routes from "@/constants/routes";
 
 Utils Imports
 
-//* Utils Imports
+//\* Utils Imports
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/utils/date";
 
@@ -170,8 +170,8 @@ Ordem preferencial:
 Exemplo:
 
 export default function LoginForm() {
-    const loginMutation = useLogin();
-    const router = useRouter();
+const loginMutation = useLogin();
+const router = useRouter();
 
     function handleLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -199,6 +199,7 @@ export default function LoginForm() {
             ...
         </form>
     );
+
 }
 
 Não é necessário adicionar comentários como:
@@ -260,12 +261,12 @@ function handleLogin() {}
 Utilizar PascalCase.
 
 type LoginPayload = {
-    email: string;
-    password: string;
+email: string;
+password: string;
 };
 
 type LoginFormProps = {
-    redirectTo?: string;
+redirectTo?: string;
 };
 
 Evitar:
@@ -282,20 +283,20 @@ type LoginType = {};
 
 Declarar o tipo antes do componente.
 
-//* Types Imports
+//\* Types Imports
 import type { RoleType } from "@/schemas/role";
 
 type RoleCardProps = {
-    role: RoleType;
+role: RoleType;
 };
 
 export default function RoleCard({ role }: RoleCardProps) {
-    return (
-        <div>
-            <role.icon />
-            <span>{role.name}</span>
-        </div>
-    );
+return (
+<div>
+<role.icon />
+<span>{role.name}</span>
+</div>
+);
 }
 
 Preferir destructuring quando melhorar a leitura.
@@ -306,7 +307,7 @@ Usar para
 
 Separar responsabilidades:
 
-//* Components Imports
+//\* Components Imports
 
 Explicar decisões não óbvias:
 
@@ -340,22 +341,22 @@ O Git já mantém o histórico.
 
 "use client"
 
-//* Components Imports
+//\* Components Imports
 import Button, { buttonVariants } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Card from "@/components/ui/card";
 
-//* Libraries Imports
+//\* Libraries Imports
 import Link from "next/link";
 import { UserKeyIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-//* Hooks Imports
+//\* Hooks Imports
 import { useLogin } from "@/hooks/auth/use-login";
 
 export default function LoginForm() {
-    const loginMutation = useLogin();
-    const router = useRouter();
+const loginMutation = useLogin();
+const router = useRouter();
 
     function handleLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -439,78 +440,80 @@ export default function LoginForm() {
             </Card.CardRoot>
         </form>
     );
+
 }
 
 13. Template de componente frontend
 
 "use client"
 
-//* Components Imports
+//\* Components Imports
 
-//* Libraries Imports
+//\* Libraries Imports
 
-//* Hooks Imports
+//\* Hooks Imports
 
-//* Services Imports
+//\* Services Imports
 
-//* Schemas Imports
+//\* Schemas Imports
 
-//* Types Imports
+//\* Types Imports
 
-//* Constants Imports
+//\* Constants Imports
 
-//* Utils Imports
+//\* Utils Imports
 
 export default function ComponentName() {
-    return (
-        <div>
-            ...
-        </div>
-    );
+return (
+<div>
+...
+</div>
+);
 }
 
 Remover todas as seções vazias antes de finalizar o arquivo.
 
 14. Template de service frontend
 
-//* Utils Imports
+//\* Utils Imports
 import http from "@/lib/http";
 
-//* Types Imports
+//\* Types Imports
 import type { UserType } from "@/schemas/user";
 
 export type ExamplePayload = {
-    field: string;
+field: string;
 };
 
 type ExampleResponse = {
-    message: string;
-    data: UserType;
+message: string;
+data: UserType;
 };
 
 export async function example(
-    payload: ExamplePayload
+payload: ExamplePayload
 ): Promise<ExampleResponse> {
-    const { data } = await http.post<ExampleResponse>(
-        "/api/example",
-        payload
-    );
+const { data } = await http.post<ExampleResponse>(
+"/api/example",
+payload
+);
 
     return data;
+
 }
 
 15. Template de hook frontend
 
-//* Libraries Imports
+//\* Libraries Imports
 import { useMutation } from "@tanstack/react-query";
 
-//* Services Imports
+//\* Services Imports
 import { example } from "@/services/example-service";
 
 export function useExample() {
-    return useMutation({
-        mutationFn: example,
-    });
+return useMutation({
+mutationFn: example,
+});
 }
 
 16. API
@@ -531,18 +534,18 @@ Exemplo:
 
 api/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   ├── Middleware/
-│   │   └── Requests/
-│   ├── Models/
-│   ├── Policies/
-│   ├── Services/
-│   └── ...
+│ ├── Http/
+│ │ ├── Controllers/
+│ │ ├── Middleware/
+│ │ └── Requests/
+│ ├── Models/
+│ ├── Policies/
+│ ├── Services/
+│ └── ...
 ├── database/
-│   ├── factories/
-│   ├── migrations/
-│   └── seeders/
+│ ├── factories/
+│ ├── migrations/
+│ └── seeders/
 ├── routes/
 └── tests/
 

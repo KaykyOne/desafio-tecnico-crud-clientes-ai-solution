@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import AuthBrand from "@/app/_components/auth-brand";
+import SiteFooter from "@/app/_components/site-footer";
 import LoginForm from "./_components/login-form";
 
 export default function LoginPage() {
@@ -16,11 +17,7 @@ export default function LoginPage() {
 
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between">
         <AuthBrand compact />
-        <Button
-          render={<Link href="/" />}
-          variant="ghost"
-          className="h-9 gap-2 px-3 text-sm font-semibold"
-        >
+        <Button render={<Link href="/" />} variant="ghost" className="h-9 gap-2 px-3 text-sm font-semibold">
           <ArrowLeft className="size-4" />
           Voltar
         </Button>
@@ -28,9 +25,7 @@ export default function LoginPage() {
 
       <section className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-14 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-24 lg:py-16">
         <div className="max-w-xl">
-          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Acesso à plataforma
-          </p>
+          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Acesso à plataforma</p>
           <h1 className="text-5xl font-semibold leading-[1.03] tracking-[-0.055em] text-foreground sm:text-6xl">
             De volta ao controle dos seus clientes.
           </h1>
@@ -46,6 +41,8 @@ export default function LoginPage() {
           <LoginForm />
         </Card.CardRoot>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

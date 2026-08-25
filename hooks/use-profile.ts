@@ -22,7 +22,11 @@ function getErrorMessage(error: unknown) {
 
 export function useProfile() {
   const router = useRouter();
-  const [profile, setProfile] = useState<ProfileFormData>({ name: "", email: "", password: "" });
+  const [profile, setProfile] = useState<ProfileFormData>({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -105,7 +109,9 @@ export function useProfile() {
       setProfile((current) => ({ ...current, name, email, password: "" }));
 
       if (requiresNewLogin) {
-        const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+        const { error: signOutError } = await supabase.auth.signOut({
+          scope: "local",
+        });
 
         if (signOutError) {
           console.error("Erro ao encerrar a sessão após alteração sensível:", signOutError.message);

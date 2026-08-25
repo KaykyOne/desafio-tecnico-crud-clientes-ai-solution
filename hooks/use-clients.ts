@@ -83,9 +83,7 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("clients")
-        .insert({ ...input, user_id: userId });
+      const { error } = await supabase.from("clients").insert({ ...input, user_id: userId });
 
       if (error) throw error;
       await fetchClients();
@@ -107,11 +105,7 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("clients")
-        .update(input)
-        .eq("id", id)
-        .eq("user_id", userId);
+      const { error } = await supabase.from("clients").update(input).eq("id", id).eq("user_id", userId);
 
       if (error) throw error;
       await fetchClients();
@@ -133,11 +127,7 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("clients")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", userId);
+      const { error } = await supabase.from("clients").delete().eq("id", id).eq("user_id", userId);
 
       if (error) throw error;
       setClients((current) => current.filter((client) => client.id !== id));

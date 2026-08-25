@@ -1,33 +1,25 @@
-"use client"
+"use client";
 
-import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
+import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
 function CollapsibleRoot({ ...props }: CollapsiblePrimitive.Root.Props) {
-  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />
+  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }
 
 function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
-  return (
-    <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" {...props} />
-  )
+  return <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" {...props} />;
 }
 
 function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props) {
-  return (
-    <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />
-  )
+  return <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />;
 }
 
-export {
-  CollapsibleRoot,
-  CollapsibleTrigger,
-  CollapsibleContent
-}
+export { CollapsibleRoot, CollapsibleTrigger, CollapsibleContent };
 
 const Collapsible = {
   CollapsibleRoot,
   CollapsibleTrigger,
-  CollapsibleContent
-}
+  CollapsibleContent,
+};
 
-export default Collapsible
+export default Collapsible;

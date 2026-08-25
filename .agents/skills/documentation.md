@@ -348,8 +348,8 @@ Mudança somente no frontend
 
 Resultado:
 
-frontend/agents/context/...  ✅
-api/agents/context/...       ❌
+frontend/agents/context/... ✅
+api/agents/context/... ❌
 
 14. Contexto deve representar o estado final
 
@@ -508,7 +508,7 @@ Ao concluir uma tarefa:
 6. Registrar decisões relevantes.
 7. Registrar pendências.
 
-22. Matriz de decisão
+8. Matriz de decisão
 
 Alteração
 

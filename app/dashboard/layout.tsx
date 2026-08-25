@@ -10,9 +10,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <aside className="w-full border-b bg-background px-5 py-5 sm:px-8 lg:min-h-screen lg:w-64 lg:shrink-0 lg:border-r lg:border-b-0 lg:px-6">
           <DashboardSidebar />
         </aside>
-        <main className="min-w-0 flex-1 px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
-          {children}
-        </main>
+        <main className="min-w-0 flex-1 px-5 py-10 sm:px-8 sm:py-14 lg:px-12">{children}</main>
       </div>
     </DashboardAuthGuard>
   );

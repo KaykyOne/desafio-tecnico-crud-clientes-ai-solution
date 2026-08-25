@@ -26,26 +26,26 @@ NÃO iniciar código antes de ler todos os arquivos de contexto dos dois projeto
 
 Sempre ler:
 
-frontend/.agents/context/*
-api/.agents/context/*
+frontend/.agents/context/_
+api/.agents/context/_
 
 Isso é obrigatório mesmo quando a tarefa solicitada envolve apenas uma das partes.
 
 Exemplos:
 
 Tarefa somente frontend
-→ ler frontend/.agents/context/*
-→ ler api/.agents/context/*
+→ ler frontend/.agents/context/_
+→ ler api/.agents/context/_
 → depois iniciar
 
 Tarefa somente API
-→ ler frontend/.agents/context/*
-→ ler api/.agents/context/*
+→ ler frontend/.agents/context/_
+→ ler api/.agents/context/_
 → depois iniciar
 
 Tarefa full stack
-→ ler frontend/.agents/context/*
-→ ler api/.agents/context/*
+→ ler frontend/.agents/context/_
+→ ler api/.agents/context/_
 → depois iniciar
 
 O contexto dos dois lados deve ser conhecido antes de qualquer modificação.
@@ -60,9 +60,9 @@ receber tarefa
 ↓
 localizar projeto
 ↓
-ler frontend/.agents/context/*
+ler frontend/.agents/context/_
 ↓
-ler api/.agents/context/*
+ler api/.agents/context/_
 ↓
 entender estado atual
 ↓
@@ -258,7 +258,7 @@ Tipos de arquivo
 
 Priorizar arquivos de contexto em Markdown:
 
-*.md
+\*.md
 
 Se o diretório possuir outros arquivos claramente destinados a contexto textual, eles também podem ser lidos.
 
@@ -379,8 +379,8 @@ Antes de implementar
 
 Sempre ler:
 
-frontend/.agents/context/*
-api/.agents/context/*
+frontend/.agents/context/_
+api/.agents/context/_
 
 Depois de implementar
 
@@ -445,13 +445,13 @@ A tarefa de código não pode começar sem que os contextos existentes dos dois 
 
 Sempre:
 
-frontend/.agents/context/*
-+
-api/.agents/context/*
-↓
-leitura completa
-↓
-código
+frontend/.agents/context/\*
+
+- api/.agents/context/\*
+  ↓
+  leitura completa
+  ↓
+  código
 
 Nunca:
 
