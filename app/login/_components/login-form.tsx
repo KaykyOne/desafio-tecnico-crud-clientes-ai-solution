@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,13 @@ export default function LoginForm() {
       <Button type="submit" disabled={isLoading} className="h-11 w-full px-4 text-sm font-bold">
         {isLoading ? "Entrando..." : "Entrar"}
       </Button>
+
+      <p className="text-center text-[0.78rem] text-muted-foreground">
+        Não tem conta?{" "}
+        <Link href="/signup" className="font-semibold text-foreground underline-offset-4 hover:underline">
+          Cadastre-se
+        </Link>
+      </p>
     </form>
   );
 }

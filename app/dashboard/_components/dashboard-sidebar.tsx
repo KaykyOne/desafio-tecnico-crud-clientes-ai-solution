@@ -85,6 +85,13 @@ export default function DashboardSidebar() {
           <LogOut />
           <span>{isLoading ? "Saindo..." : "Sair"}</span>
         </Button>
+
+        <p className="px-1 text-center text-[0.65rem] text-muted-foreground">
+          por{" "}
+          <a href="https://kayky.dev.br/" target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-foreground hover:underline">
+            Kayky
+          </a>
+        </p>
       </div>
     </div>
   );

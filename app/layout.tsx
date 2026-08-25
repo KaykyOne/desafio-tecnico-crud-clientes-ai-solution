@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clientes | Gestão de clientes",
-  description: "Uma plataforma simples para a gestão de clientes.",
+  title: "ClienteApp | Gestão para freelancers",
+  description: "Clientes, tarefas e financeiro numa única plataforma para quem toca o negócio sozinho.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
