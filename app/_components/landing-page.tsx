@@ -1,11 +1,7 @@
 "use client";
 
 //* Components Imports
-import {
-  AvatarBadge,
-  AvatarFallback,
-  AvatarRoot,
-} from "@/components/ui/avatar";
+import { AvatarBadge, AvatarFallback, AvatarRoot } from "@/components/ui/avatar";
 import Badge from "@/components/ui/badge";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
@@ -29,26 +25,20 @@ export default function LandingPage() {
           Clientes
         </div>
 
-        <Button
-          render={<Link href="/login" />}
-          variant="ghost"
-          className="h-9 px-3 text-sm font-semibold"
-        >
+        <Button render={<Link href="/login" />} variant="ghost" className="h-9 px-3 text-sm font-semibold">
           Entrar
         </Button>
       </nav>
 
       <section className="mx-auto grid min-h-[calc(100vh-96px)] max-w-6xl items-center gap-14 py-16 lg:grid-cols-[1.04fr_0.96fr] lg:py-20">
         <div className="max-w-xl">
-          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Gestão de clientes
-          </p>
+          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Gestão de clientes</p>
           <h1 className="text-5xl font-semibold leading-[1.03] tracking-[-0.055em] text-foreground sm:text-6xl lg:text-7xl">
             Clientes em ordem. Negócio em movimento.
           </h1>
           <p className="mt-7 max-w-md text-lg leading-8 text-muted-foreground">
-            Centralize os dados dos seus clientes e encontre rapidamente as
-            informações que sua equipe precisa para atender melhor.
+            Centralize os dados dos seus clientes e encontre rapidamente as informações que sua equipe precisa para
+            atender melhor.
           </p>
 
           <Button
@@ -67,9 +57,7 @@ export default function LandingPage() {
           <Card.CardRoot className="relative gap-0 overflow-hidden rounded-xl border bg-card py-0 shadow-sm">
             <Card.CardHeader className="mb-3 px-5 pt-5 sm:px-7 sm:pt-7">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Seus clientes
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Seus clientes</p>
                 <p className="mt-1 text-2xl font-semibold tracking-tight">Visão geral</p>
               </div>
               <Card.CardAction>
@@ -84,7 +72,10 @@ export default function LandingPage() {
                 <div key={name} className="flex items-center gap-3 rounded-lg bg-muted p-3">
                   <AvatarRoot size="lg" className="rounded-md bg-background">
                     <AvatarFallback className="rounded-md bg-background text-sm font-bold">
-                      {name.split(" ").map((part) => part[0]).join("")}
+                      {name
+                        .split(" ")
+                        .map((part) => part[0])
+                        .join("")}
                     </AvatarFallback>
                     <AvatarBadge className="bg-foreground" />
                   </AvatarRoot>

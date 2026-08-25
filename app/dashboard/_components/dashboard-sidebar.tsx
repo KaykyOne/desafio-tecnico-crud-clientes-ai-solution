@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound } from "lucide-react";
+import { KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound, Wallet } from "lucide-react";
 
 import { AvatarFallback, AvatarRoot } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
   { href: "/dashboard/tasks", label: "Tarefas", icon: KanbanSquare },
+  { href: "/dashboard/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/dashboard/settings", label: "Configurações", icon: Settings },
 ];
 
@@ -29,18 +30,13 @@ export default function DashboardSidebar() {
         lg:sticky
         lg:top-6
         lg:h-[calc(100dvh-3rem)]
-      ">
-      <Link
-        href="/dashboard"
-        className="flex shrink-0 items-center gap-3 px-1"
-        aria-label="Ir para a visão geral"
-      >
+      "
+    >
+      <Link href="/dashboard" className="flex shrink-0 items-center gap-3 px-1" aria-label="Ir para a visão geral">
         <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black tracking-[-0.08em] text-primary-foreground">
           CA
         </span>
-        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-foreground">
-          ClienteApp
-        </span>
+        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-foreground">ClienteApp</span>
       </Link>
 
       <nav className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible" aria-label="Navegação principal">
@@ -55,7 +51,7 @@ export default function DashboardSidebar() {
               render={<Link href={href} aria-current={isActive ? "page" : undefined} />}
               className={cn(
                 "h-10 shrink-0 justify-start gap-3 rounded-md px-3 text-muted-foreground",
-                isActive && "bg-accent font-bold text-accent-foreground shadow-sm"
+                isActive && "bg-accent font-bold text-accent-foreground shadow-sm",
               )}
             >
               <Icon />

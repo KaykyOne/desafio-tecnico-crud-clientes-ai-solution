@@ -64,7 +64,9 @@ export function useTasks() {
       const userId = await getAuthenticatedUserId();
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, user_id, title, description, priority, column_id, average_duration_minutes, due_date, created_at, updated_at")
+        .select(
+          "id, user_id, title, description, priority, column_id, average_duration_minutes, due_date, created_at, updated_at",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -136,7 +138,11 @@ export function useTasks() {
 
     if (!task || task.column_id === columnId) return true;
 
-    setTasks((currentTasks) => currentTasks.map((currentTask) => currentTask.id === id ? { ...currentTask, column_id: columnId } : currentTask));
+    setTasks((currentTasks) =>
+      currentTasks.map((currentTask) =>
+        currentTask.id === id ? { ...currentTask, column_id: columnId } : currentTask,
+      ),
+    );
 
     try {
       const userId = await getAuthenticatedUserId();
@@ -176,5 +182,15 @@ export function useTasks() {
     }
   }
 
-  return { tasks, isLoading, isSaving, deletingTaskId, createTask, updateTask, updateTaskColumn, deleteTask, refreshTasks: fetchTasks };
+  return {
+    tasks,
+    isLoading,
+    isSaving,
+    deletingTaskId,
+    createTask,
+    updateTask,
+    updateTaskColumn,
+    deleteTask,
+    refreshTasks: fetchTasks,
+  };
 }

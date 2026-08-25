@@ -46,12 +46,8 @@ export default function LoginForm() {
   return (
     <form className="w-full space-y-6" onSubmit={handleSubmit}>
       <div className="space-y-1">
-        <h1 className="text-[1.65rem] font-bold tracking-[-0.04em] text-foreground">
-          Entrar
-        </h1>
-        <p className="text-[0.78rem] leading-5 text-muted-foreground">
-          Acesse sua conta para continuar.
-        </p>
+        <h1 className="text-[1.65rem] font-bold tracking-[-0.04em] text-foreground">Entrar</h1>
+        <p className="text-[0.78rem] leading-5 text-muted-foreground">Acesse sua conta para continuar.</p>
       </div>
 
       <div className="space-y-4">
@@ -89,22 +85,14 @@ export default function LoginForm() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Checkbox
-            id="remember-me"
-            checked={rememberMe}
-            onCheckedChange={setRememberMe}
-          />
+          <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={setRememberMe} />
           <Label htmlFor="remember-me" className="text-[0.72rem] font-medium text-muted-foreground">
             Salvar login neste dispositivo
           </Label>
         </div>
       </div>
 
-      <Button
-        type="submit"
-        disabled={isLoading}
-        className="h-11 w-full px-4 text-sm font-bold"
-      >
+      <Button type="submit" disabled={isLoading} className="h-11 w-full px-4 text-sm font-bold">
         {isLoading ? "Entrando..." : "Entrar"}
       </Button>
     </form>

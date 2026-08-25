@@ -18,14 +18,14 @@ ClienteApp é uma aplicação web para gerenciamento de clientes. A plataforma p
 
 ## Rotas
 
-| Rota | Descrição |
-| --- | --- |
-| `/` | Apresentação do projeto |
-| `/login` | Login do usuário |
-| `/dashboard` | Visão geral da área autenticada |
-| `/dashboard/clients` | Gerenciamento de clientes |
-| `/dashboard/tasks` | Board Kanban para gerenciamento de tarefas |
-| `/dashboard/settings` | Configurações da conta |
+| Rota                  | Descrição                                  |
+| --------------------- | ------------------------------------------ |
+| `/`                   | Apresentação do projeto                    |
+| `/login`              | Login do usuário                           |
+| `/dashboard`          | Visão geral da área autenticada            |
+| `/dashboard/clients`  | Gerenciamento de clientes                  |
+| `/dashboard/tasks`    | Board Kanban para gerenciamento de tarefas |
+| `/dashboard/settings` | Configurações da conta                     |
 
 ## Stack
 
@@ -67,12 +67,12 @@ A aplicação ficará disponível em `http://localhost:3000`.
 
 ## Scripts
 
-| Comando | Uso |
-| --- | --- |
-| `npm run dev` | Inicia o servidor de desenvolvimento |
-| `npm run build` | Gera o build de produção |
-| `npm run start` | Executa o build de produção |
-| `npm run lint` | Executa o ESLint |
+| Comando         | Uso                                  |
+| --------------- | ------------------------------------ |
+| `npm run dev`   | Inicia o servidor de desenvolvimento |
+| `npm run build` | Gera o build de produção             |
+| `npm run start` | Executa o build de produção          |
+| `npm run lint`  | Executa o ESLint                     |
 
 ## Organização do código
 
@@ -89,41 +89,41 @@ public/               Arquivos estáticos
 
 ### Dependências de aplicação
 
-| Pacote | Uso resumido |
-| --- | --- |
-| `@base-ui/react` | Primitives acessíveis para botões, inputs, dialogs e outros componentes de UI. |
-| `@dnd-kit/core` e `@dnd-kit/sortable` | Drag-and-drop acessível para o board de tarefas. |
-| `@supabase/ssr` | Suporte do Supabase para cenários SSR e integração com frameworks. |
-| `@supabase/supabase-js` | Cliente JavaScript usado para autenticação e operações no Supabase. |
-| `class-variance-authority` | Criação de variantes tipadas para componentes como Button e Badge. |
-| `clsx` | Composição condicional de classes CSS. |
-| `cmdk` | Base para interfaces de comandos e busca rápida. |
-| `dotenv` | Carregamento de variáveis de ambiente. |
-| `embla-carousel-react` | Motor de carrossel para React. |
-| `input-otp` | Componentes para entrada de códigos OTP. |
-| `lucide-react` | Biblioteca de ícones React. |
-| `next` | Framework principal da aplicação. |
-| `next-themes` | Gerenciamento de tema para componentes compatíveis. |
-| `react` | Biblioteca de construção da interface. |
-| `react-day-picker` | Seletor de datas. |
-| `react-dom` | Renderização do React no navegador. |
-| `react-resizable-panels` | Painéis redimensionáveis. |
-| `recharts` | Gráficos e visualizações de dados. |
-| `sonner` | Toasts de sucesso, erro e aviso. |
-| `tailwind-merge` | Mesclagem inteligente de classes Tailwind. |
-| `zod` | Validação e definição de schemas TypeScript/JavaScript. |
+| Pacote                                | Uso resumido                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| `@base-ui/react`                      | Primitives acessíveis para botões, inputs, dialogs e outros componentes de UI. |
+| `@dnd-kit/core` e `@dnd-kit/sortable` | Drag-and-drop acessível para o board de tarefas.                               |
+| `@supabase/ssr`                       | Suporte do Supabase para cenários SSR e integração com frameworks.             |
+| `@supabase/supabase-js`               | Cliente JavaScript usado para autenticação e operações no Supabase.            |
+| `class-variance-authority`            | Criação de variantes tipadas para componentes como Button e Badge.             |
+| `clsx`                                | Composição condicional de classes CSS.                                         |
+| `cmdk`                                | Base para interfaces de comandos e busca rápida.                               |
+| `dotenv`                              | Carregamento de variáveis de ambiente.                                         |
+| `embla-carousel-react`                | Motor de carrossel para React.                                                 |
+| `input-otp`                           | Componentes para entrada de códigos OTP.                                       |
+| `lucide-react`                        | Biblioteca de ícones React.                                                    |
+| `next`                                | Framework principal da aplicação.                                              |
+| `next-themes`                         | Gerenciamento de tema para componentes compatíveis.                            |
+| `react`                               | Biblioteca de construção da interface.                                         |
+| `react-day-picker`                    | Seletor de datas.                                                              |
+| `react-dom`                           | Renderização do React no navegador.                                            |
+| `react-resizable-panels`              | Painéis redimensionáveis.                                                      |
+| `recharts`                            | Gráficos e visualizações de dados.                                             |
+| `sonner`                              | Toasts de sucesso, erro e aviso.                                               |
+| `tailwind-merge`                      | Mesclagem inteligente de classes Tailwind.                                     |
+| `zod`                                 | Validação e definição de schemas TypeScript/JavaScript.                        |
 
 ### Dependências de desenvolvimento
 
-| Pacote | Uso resumido |
-| --- | --- |
-| `@tailwindcss/postcss` | Integração do Tailwind CSS com PostCSS. |
-| `@types/node` | Tipos TypeScript para APIs do Node.js. |
-| `@types/react` | Tipos TypeScript para React. |
-| `@types/react-dom` | Tipos TypeScript para React DOM. |
-| `eslint` | Linter para identificar problemas no código. |
-| `eslint-config-next` | Regras do ESLint específicas para Next.js. |
-| `tailwindcss` | Framework utilitário de estilos. |
-| `typescript` | Tipagem estática e compilação TypeScript. |
+| Pacote                 | Uso resumido                                 |
+| ---------------------- | -------------------------------------------- |
+| `@tailwindcss/postcss` | Integração do Tailwind CSS com PostCSS.      |
+| `@types/node`          | Tipos TypeScript para APIs do Node.js.       |
+| `@types/react`         | Tipos TypeScript para React.                 |
+| `@types/react-dom`     | Tipos TypeScript para React DOM.             |
+| `eslint`               | Linter para identificar problemas no código. |
+| `eslint-config-next`   | Regras do ESLint específicas para Next.js.   |
+| `tailwindcss`          | Framework utilitário de estilos.             |
+| `typescript`           | Tipagem estática e compilação TypeScript.    |
 
 > O projeto usa componentes locais inspirados no shadcn/ui. Por isso, `shadcn/ui` não aparece como uma dependência única no `package.json`; os componentes ficam versionados em `components/ui`.

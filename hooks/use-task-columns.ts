@@ -46,7 +46,9 @@ export function useTaskColumns() {
       if (error) throw error;
       setColumns((data ?? []) as TaskColumnRecord[]);
     } catch (error) {
-      toast.error("Não foi possível carregar as colunas", { description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente.") });
+      toast.error("Não foi possível carregar as colunas", {
+        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+      });
       console.error("Erro ao listar colunas de tarefas:", error);
     } finally {
       setIsLoading(false);
@@ -70,13 +72,20 @@ export function useTaskColumns() {
     try {
       const userId = await getAuthenticatedUserId();
       const position = columns.reduce((highest, column) => Math.max(highest, column.position), -1) + 1;
-      const { error } = await supabase.from("task_columns").insert({ user_id: userId, key: crypto.randomUUID(), name: normalizedName, position });
+      const { error } = await supabase.from("task_columns").insert({
+        user_id: userId,
+        key: crypto.randomUUID(),
+        name: normalizedName,
+        position,
+      });
       if (error) throw error;
       await fetchColumns();
       toast.success("Coluna criada");
       return true;
     } catch (error) {
-      toast.error("Não foi possível criar a coluna", { description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes.") });
+      toast.error("Não foi possível criar a coluna", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
       console.error("Erro ao criar coluna de tarefas:", error);
       return false;
     } finally {
@@ -94,13 +103,21 @@ export function useTaskColumns() {
     setIsSaving(true);
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("task_columns").update({ name: normalizedName }).eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("task_columns")
+        .update({ name: normalizedName })
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
-      setColumns((current) => current.map((column) => column.id === id ? { ...column, name: normalizedName } : column));
+      setColumns((current) =>
+        current.map((column) => (column.id === id ? { ...column, name: normalizedName } : column)),
+      );
       toast.success("Coluna renomeada");
       return true;
     } catch (error) {
-      toast.error("Não foi possível renomear a coluna", { description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes.") });
+      toast.error("Não foi possível renomear a coluna", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
       console.error("Erro ao renomear coluna de tarefas:", error);
       return false;
     } finally {
@@ -119,7 +136,14 @@ export function useTaskColumns() {
       return true;
     } catch (error) {
       const isForeignKeyError = error && typeof error === "object" && "code" in error && error.code === "23503";
-      toast.error(isForeignKeyError ? "Não é possível excluir uma coluna com tarefas" : "Não foi possível excluir a coluna", { description: isForeignKeyError ? "Mova ou exclua as tarefas desta coluna antes de removê-la." : getSupabaseErrorMessage(error, "Tente novamente em alguns instantes.") });
+      toast.error(
+        isForeignKeyError ? "Não é possível excluir uma coluna com tarefas" : "Não foi possível excluir a coluna",
+        {
+          description: isForeignKeyError
+            ? "Mova ou exclua as tarefas desta coluna antes de removê-la."
+            : getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        },
+      );
       console.error("Erro ao excluir coluna de tarefas:", error);
       return false;
     } finally {
@@ -129,22 +153,46 @@ export function useTaskColumns() {
 
   async function reorderColumns(orderedIds: string[]) {
     const previousColumns = columns;
-    const reorderedColumns = orderedIds.map((id, position) => ({ ...columns.find((column) => column.id === id)!, position }));
+    const reorderedColumns = orderedIds.map((id, position) => ({
+      ...columns.find((column) => column.id === id)!,
+      position,
+    }));
     if (reorderedColumns.some((column) => !column.id)) return false;
 
     setColumns(reorderedColumns);
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("task_columns").upsert(reorderedColumns.map(({ id, key, name, color, position }) => ({ id, user_id: userId, key, name, color, position })), { onConflict: "id" });
+      const { error } = await supabase.from("task_columns").upsert(
+        reorderedColumns.map(({ id, key, name, color, position }) => ({
+          id,
+          user_id: userId,
+          key,
+          name,
+          color,
+          position,
+        })),
+        { onConflict: "id" },
+      );
       if (error) throw error;
       return true;
     } catch (error) {
       setColumns(previousColumns);
-      toast.error("Não foi possível reordenar as colunas", { description: getSupabaseErrorMessage(error, "A ordem anterior foi restaurada.") });
+      toast.error("Não foi possível reordenar as colunas", {
+        description: getSupabaseErrorMessage(error, "A ordem anterior foi restaurada."),
+      });
       console.error("Erro ao reordenar colunas de tarefas:", error);
       return false;
     }
   }
 
-  return { columns, isLoading, isSaving, createColumn, renameColumn, deleteColumn, reorderColumns, refreshColumns: fetchColumns };
+  return {
+    columns,
+    isLoading,
+    isSaving,
+    createColumn,
+    renameColumn,
+    deleteColumn,
+    reorderColumns,
+    refreshColumns: fetchColumns,
+  };
 }
