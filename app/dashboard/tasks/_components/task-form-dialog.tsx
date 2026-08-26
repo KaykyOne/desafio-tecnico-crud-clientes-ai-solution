@@ -19,6 +19,7 @@ import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } fro
 import { Textarea } from "@/components/ui/textarea";
 
 //* Types Imports
+import type { ClientRecord } from "@/hooks/use-clients";
 import type { TaskColumnRecord } from "@/hooks/use-task-columns";
 import type { TaskInput, TaskPriority, TaskRecord } from "@/hooks/use-tasks";
 
@@ -26,6 +27,7 @@ type TaskFormDialogProps = {
   open: boolean;
   task: TaskRecord | null;
   columns: TaskColumnRecord[];
+  clients: ClientRecord[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: TaskInput) => Promise<boolean>;
@@ -37,12 +39,21 @@ function createEmptyForm(columnId: string): TaskInput {
     description: "",
     priority: "medium",
     column_id: columnId,
+    cliente_id: null,
     average_duration_minutes: 30,
     due_date: new Date().toISOString().split("T")[0],
   };
 }
 
-export default function TaskFormDialog({ open, task, columns, isSaving, onOpenChange, onSubmit }: TaskFormDialogProps) {
+export default function TaskFormDialog({
+  open,
+  task,
+  columns,
+  clients,
+  isSaving,
+  onOpenChange,
+  onSubmit,
+}: TaskFormDialogProps) {
   const [form, setForm] = useState<TaskInput>(() =>
     task
       ? {
@@ -50,6 +61,7 @@ export default function TaskFormDialog({ open, task, columns, isSaving, onOpenCh
           description: task.description ?? "",
           priority: task.priority,
           column_id: task.column_id,
+          cliente_id: task.cliente_id,
           average_duration_minutes: task.average_duration_minutes,
           due_date: task.due_date,
         }
@@ -155,6 +167,30 @@ export default function TaskFormDialog({ open, task, columns, isSaving, onOpenCh
                 </SelectContent>
               </SelectRoot>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Cliente (opcional)</Label>
+            <SelectRoot
+              value={form.cliente_id ?? "none"}
+              onValueChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  cliente_id: value === "none" ? null : value,
+                }))
+              }
+            >
+              <SelectTrigger className="h-11 w-full bg-background">
+                <SelectValue>{clients.find((client) => client.id === form.cliente_id)?.name ?? "Nenhum"}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectRoot>
           </div>
           <div className="space-y-2">
             <Label htmlFor="task-duration">Tempo médio (minutos)</Label>

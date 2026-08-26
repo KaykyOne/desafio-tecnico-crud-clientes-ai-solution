@@ -16,6 +16,7 @@ export type TaskRecord = {
   description: string | null;
   priority: TaskPriority;
   column_id: string;
+  cliente_id: string | null;
   average_duration_minutes: number;
   due_date: string;
   created_at: string;
@@ -27,9 +28,16 @@ export type TaskInput = {
   description: string;
   priority: TaskPriority;
   column_id: string;
+  cliente_id: string | null;
   average_duration_minutes: number;
   due_date: string;
 };
+
+/** Campos editáveis direto no card, sem abrir o formulário completo. */
+export type TaskQuickPatch = Partial<Pick<TaskRecord, "priority" | "cliente_id">>;
+
+const SELECT_COLUMNS =
+  "id, user_id, title, description, priority, column_id, cliente_id, average_duration_minutes, due_date, created_at, updated_at";
 
 function getSupabaseErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
@@ -64,9 +72,7 @@ export function useTasks() {
       const userId = await getAuthenticatedUserId();
       const { data, error } = await supabase
         .from("tasks")
-        .select(
-          "id, user_id, title, description, priority, column_id, average_duration_minutes, due_date, created_at, updated_at",
-        )
+        .select(SELECT_COLUMNS)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -160,6 +166,34 @@ export function useTasks() {
     }
   }
 
+  /** Atualiza prioridade/cliente direto do card (Sheet de edição rápida), sem recarregar a lista inteira. */
+  async function quickUpdateTask(id: string, patch: TaskQuickPatch) {
+    const previousTasks = tasks;
+    const task = previousTasks.find((currentTask) => currentTask.id === id);
+
+    if (!task) return false;
+    if (Object.entries(patch).every(([key, value]) => task[key as keyof TaskQuickPatch] === value)) return true;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((currentTask) => (currentTask.id === id ? { ...currentTask, ...patch } : currentTask)),
+    );
+
+    try {
+      const userId = await getAuthenticatedUserId();
+      const { error } = await supabase.from("tasks").update(patch).eq("id", id).eq("user_id", userId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      setTasks(previousTasks);
+      toast.error("Não foi possível atualizar a tarefa", {
+        description: getSupabaseErrorMessage(error, "A alteração foi desfeita. Tente novamente."),
+      });
+      console.error("Erro ao atualizar tarefa pelo card:", error);
+      return false;
+    }
+  }
+
   async function deleteTask(id: string) {
     setDeletingTaskId(id);
 
@@ -190,6 +224,7 @@ export function useTasks() {
     createTask,
     updateTask,
     updateTaskColumn,
+    quickUpdateTask,
     deleteTask,
     refreshTasks: fetchTasks,
   };

@@ -20,6 +20,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 //* Hooks Imports
+import { useClients } from "@/hooks/use-clients";
 import { useTaskColumns } from "@/hooks/use-task-columns";
 import { useTasks, type TaskRecord } from "@/hooks/use-tasks";
 
@@ -29,6 +30,7 @@ import KanbanBoard from "./_components/kanban-board";
 import ManageColumnsDialog from "./_components/manage-columns-dialog";
 import TaskCard from "./_components/task-card";
 import TaskFormDialog from "./_components/task-form-dialog";
+import TaskQuickEditSheet from "./_components/task-quick-edit-sheet";
 
 export default function TasksPage() {
   const {
@@ -39,8 +41,10 @@ export default function TasksPage() {
     createTask,
     updateTask,
     updateTaskColumn,
+    quickUpdateTask,
     deleteTask,
   } = useTasks();
+  const { clients } = useClients();
   const {
     columns,
     isLoading: isLoadingColumns,
@@ -54,6 +58,7 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<TaskRecord | null>(null);
   const [deletingTask, setDeletingTask] = useState<TaskRecord | null>(null);
   const [activeTask, setActiveTask] = useState<TaskRecord | null>(null);
+  const [quickEditTaskId, setQuickEditTaskId] = useState<string | null>(null);
   const [isManagingColumns, setIsManagingColumns] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -94,6 +99,9 @@ export default function TasksPage() {
     {},
   );
   const isLoading = isLoadingTasks || isLoadingColumns;
+  const clientNameById = Object.fromEntries(clients.map((client) => [client.id, client.name]));
+  // Lido da lista (e não guardado em estado) pro Sheet refletir cada alteração salva na hora.
+  const quickEditTask = tasks.find((task) => task.id === quickEditTaskId) ?? null;
 
   return (
     <section className="space-y-8">
@@ -131,23 +139,39 @@ export default function TasksPage() {
         <KanbanBoard
           tasks={tasks}
           columns={columns}
+          clientNameById={clientNameById}
           isLoading={isLoading}
           onEdit={openEditDialog}
           onDelete={setDeletingTask}
+          onQuickEdit={(task) => setQuickEditTaskId(task.id)}
         />
         <DragOverlay>
           {activeTask ? (
             <div className="w-[min(22rem,calc(100vw-2rem))] rotate-1 shadow-xl">
-              <TaskCard task={activeTask} />
+              <TaskCard
+                task={activeTask}
+                clientName={activeTask.cliente_id ? clientNameById[activeTask.cliente_id] : undefined}
+              />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
+      {quickEditTask && (
+        <TaskQuickEditSheet
+          task={quickEditTask}
+          clients={clients}
+          onOpenChange={(open) => {
+            if (!open) setQuickEditTaskId(null);
+          }}
+          onPatch={quickUpdateTask}
+        />
+      )}
       <TaskFormDialog
         key={`${editingTask?.id ?? "new"}-${isFormOpen}`}
         open={isFormOpen}
         task={editingTask}
         columns={columns}
+        clients={clients}
         isSaving={isSaving}
         onOpenChange={setIsFormOpen}
         onSubmit={(input) => (editingTask ? updateTask(editingTask.id, input) : createTask(input))}

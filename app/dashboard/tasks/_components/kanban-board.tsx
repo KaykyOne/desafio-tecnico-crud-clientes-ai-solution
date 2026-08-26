@@ -21,17 +21,22 @@ import TaskCardSkeleton from "./task-card-skeleton";
 type KanbanBoardProps = {
   tasks: TaskRecord[];
   columns: TaskColumnRecord[];
+  clientNameById: Record<string, string>;
   isLoading: boolean;
   onEdit: (task: TaskRecord) => void;
   onDelete: (task: TaskRecord) => void;
+  onQuickEdit: (task: TaskRecord) => void;
 };
 
 function DraggableTaskCard({
   task,
+  clientName,
   onEdit,
   onDelete,
-}: Omit<KanbanBoardProps, "tasks" | "columns" | "isLoading"> & {
+  onQuickEdit,
+}: Omit<KanbanBoardProps, "tasks" | "columns" | "clientNameById" | "isLoading"> & {
   task: TaskRecord;
+  clientName?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
@@ -43,11 +48,13 @@ function DraggableTaskCard({
     <div ref={setNodeRef} style={style}>
       <TaskCard
         task={task}
+        clientName={clientName}
         isDragging={isDragging}
         draggableAttributes={attributes}
         draggableListeners={listeners}
         onEdit={onEdit}
         onDelete={onDelete}
+        onQuickEdit={onQuickEdit}
       />
     </div>
   );
@@ -56,9 +63,11 @@ function DraggableTaskCard({
 function KanbanColumn({
   column,
   tasks,
+  clientNameById,
   isLoading,
   onEdit,
   onDelete,
+  onQuickEdit,
 }: { column: TaskColumnRecord; tasks: TaskRecord[] } & Omit<KanbanBoardProps, "tasks" | "columns">) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id: column.id,
@@ -113,7 +122,16 @@ function KanbanColumn({
         {isLoading ? (
           Array.from({ length: 3 }, (_, index) => <TaskCardSkeleton key={index} />)
         ) : tasks.length ? (
-          tasks.map((task) => <DraggableTaskCard key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} />)
+          tasks.map((task) => (
+            <DraggableTaskCard
+              key={task.id}
+              task={task}
+              clientName={task.cliente_id ? clientNameById[task.cliente_id] : undefined}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onQuickEdit={onQuickEdit}
+            />
+          ))
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-background/60 px-4 py-10 text-center text-sm text-muted-foreground">
             Nenhuma tarefa nesta coluna.
@@ -124,7 +142,15 @@ function KanbanColumn({
   );
 }
 
-export default function KanbanBoard({ tasks, columns, isLoading, onEdit, onDelete }: KanbanBoardProps) {
+export default function KanbanBoard({
+  tasks,
+  columns,
+  clientNameById,
+  isLoading,
+  onEdit,
+  onDelete,
+  onQuickEdit,
+}: KanbanBoardProps) {
   return (
     <SortableContext items={columns.map((column) => column.id)} strategy={rectSortingStrategy}>
       <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))]">
@@ -133,9 +159,11 @@ export default function KanbanBoard({ tasks, columns, isLoading, onEdit, onDelet
             key={column.id}
             column={column}
             tasks={tasks.filter((task) => task.column_id === column.id)}
+            clientNameById={clientNameById}
             isLoading={isLoading}
             onEdit={onEdit}
             onDelete={onDelete}
+            onQuickEdit={onQuickEdit}
           />
         ))}
       </div>
