@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClienteApp | Gestão para freelancers",
+  title: "izi Freelas | Gestão para freelancers",
   description: "Clientes, tarefas e financeiro numa única plataforma para quem toca o negócio sozinho.",
 };
 
