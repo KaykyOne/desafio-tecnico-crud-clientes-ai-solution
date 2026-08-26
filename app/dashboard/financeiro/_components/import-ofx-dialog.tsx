@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 //* Types Imports
+import type { BancoRecord } from "@/hooks/use-bancos";
 import type { ClientRecord } from "@/hooks/use-clients";
 import type { FinanceiroInput } from "@/hooks/use-financeiro";
 import { parseOfxFile, type OfxGroup } from "@/lib/ofx";
@@ -26,8 +27,10 @@ type ReviewState = { include: boolean; tipo: "gasto" | "ganho"; cliente_id: stri
 type ImportOfxDialogProps = {
   open: boolean;
   clients: ClientRecord[];
+  bancos: BancoRecord[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
+  onFindDuplicates: (inputs: FinanceiroInput[]) => Promise<FinanceiroInput[]>;
   onImport: (inputs: FinanceiroInput[]) => Promise<{ inserted: number; skipped: number }>;
 };
 
@@ -38,6 +41,10 @@ const toneStyles = {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${date}T00:00:00`));
 }
 
 function sumIncluded(groups: OfxGroup[], review: Record<string, ReviewState>) {
@@ -97,14 +104,23 @@ function GroupCard({ group, review, clients, onUpdate }: GroupCardProps) {
   );
 }
 
-export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange, onImport }: ImportOfxDialogProps) {
+export default function ImportOfxDialog({ open, clients, bancos, isSaving, onOpenChange, onFindDuplicates, onImport }: ImportOfxDialogProps) {
   const [groups, setGroups] = useState<OfxGroup[]>([]);
   const [review, setReview] = useState<Record<string, ReviewState>>({});
+  const [bancoId, setBancoId] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+  const [duplicates, setDuplicates] = useState<FinanceiroInput[] | null>(null);
+  const [pendingUniqueInputs, setPendingUniqueInputs] = useState<FinanceiroInput[]>([]);
+  const [selectedDuplicates, setSelectedDuplicates] = useState<Set<number>>(new Set());
 
   function reset() {
     setGroups([]);
     setReview({});
+    setBancoId(null);
+    setDuplicates(null);
+    setPendingUniqueInputs([]);
+    setSelectedDuplicates(new Set());
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -136,6 +152,11 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
     setReview((current) => ({ ...current, [key]: { ...current[key], ...patch } }));
   }
 
+  async function finalizeImport(inputsToImport: FinanceiroInput[]) {
+    const result = await onImport(inputsToImport);
+    if (result.inserted > 0) handleOpenChange(false);
+  }
+
   async function handleImport() {
     const inputs: FinanceiroInput[] = groups.flatMap((group) => {
       const groupReview = review[group.key];
@@ -146,6 +167,7 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
         valor: transaction.valor,
         descricao: transaction.descricao,
         cliente_id: groupReview.cliente_id,
+        banco_id: bancoId,
         fitid: transaction.fitid,
       }));
     });
@@ -155,8 +177,42 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
       return;
     }
 
-    const result = await onImport(inputs);
-    if (result.inserted > 0) handleOpenChange(false);
+    setIsCheckingDuplicates(true);
+    const duplicateInputs = await onFindDuplicates(inputs);
+    setIsCheckingDuplicates(false);
+
+    if (duplicateInputs.length > 0) {
+      setDuplicates(duplicateInputs);
+      setPendingUniqueInputs(inputs.filter((input) => !duplicateInputs.includes(input)));
+      setSelectedDuplicates(new Set());
+      return;
+    }
+
+    await finalizeImport(inputs);
+  }
+
+  function toggleDuplicate(index: number, checked: boolean) {
+    setSelectedDuplicates((current) => {
+      const next = new Set(current);
+      if (checked) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  }
+
+  async function handleConfirmDuplicates() {
+    if (!duplicates) return;
+    const selected = duplicates.filter((_, index) => selectedDuplicates.has(index));
+    await finalizeImport([...pendingUniqueInputs, ...selected]);
+  }
+
+  async function handleIgnoreDuplicates() {
+    if (pendingUniqueInputs.length === 0) {
+      toast.info("Nenhum lançamento novo para importar");
+      handleOpenChange(false);
+      return;
+    }
+    await finalizeImport(pendingUniqueInputs);
   }
 
   const includedCount = groups.reduce((total, group) => total + (review[group.key]?.include ? group.transactions.length : 0), 0);
@@ -169,11 +225,34 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
     <DialogRoot open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-background p-6 sm:max-w-3xl sm:p-8">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-[-0.04em]">Importar extrato OFX</DialogTitle>
-          <DialogDescription>Selecione o arquivo exportado pelo seu banco. Transações parecidas são agrupadas para você revisar de uma vez.</DialogDescription>
+          {duplicates ? (
+            <>
+              <DialogTitle className="text-xl font-bold tracking-[-0.04em]">Lançamentos parecidos já existem</DialogTitle>
+              <DialogDescription>
+                Encontramos {duplicates.length} lançamento{duplicates.length === 1 ? "" : "s"} com a mesma data, valor e descrição de algo que já está no seu extrato. Selecione os que quer importar mesmo assim, ou ignore todos.
+              </DialogDescription>
+            </>
+          ) : (
+            <>
+              <DialogTitle className="text-xl font-bold tracking-[-0.04em]">Importar extrato OFX</DialogTitle>
+              <DialogDescription>Selecione o arquivo exportado pelo seu banco. Transações parecidas são agrupadas para você revisar de uma vez.</DialogDescription>
+            </>
+          )}
         </DialogHeader>
 
-        {groups.length === 0 ? (
+        {duplicates ? (
+          <ul className="space-y-2">
+            {duplicates.map((duplicate, index) => (
+              <li key={index} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+                <Checkbox checked={selectedDuplicates.has(index)} onCheckedChange={(checked) => toggleDuplicate(index, checked === true)} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{duplicate.descricao || "Sem descrição"}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(duplicate.data)} · {formatCurrency(duplicate.valor)} · {duplicate.tipo === "gasto" ? "Saída" : "Ganho"}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : groups.length === 0 ? (
           <div className="space-y-2">
             <Label htmlFor="ofx-file">Arquivo .ofx</Label>
             <Input id="ofx-file" type="file" accept=".ofx,.qfx" disabled={isParsing} onChange={(event) => void handleFileChange(event)} className="h-11" />
@@ -181,6 +260,19 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Esses dados são de qual banco? (opcional)</Label>
+              <SelectRoot value={bancoId ?? "none"} onValueChange={(value) => setBancoId(value === "none" ? null : value)}>
+                <SelectTrigger className="h-10 w-full bg-background sm:max-w-xs">
+                  <SelectValue>{bancos.find((banco) => banco.id === bancoId)?.nome ?? "Não quero informar o banco"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não quero informar o banco</SelectItem>
+                  {bancos.map((banco) => <SelectItem key={banco.id} value={banco.id}>{banco.nome}</SelectItem>)}
+                </SelectContent>
+              </SelectRoot>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                 <div className="flex items-center gap-2 text-emerald-800"><TrendingUp className="size-4" /><span className="text-xs font-bold uppercase tracking-[0.1em]">Ganhos</span></div>
@@ -214,10 +306,19 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
 
         <DialogFooter className="mt-4 border-t-0 bg-transparent p-0">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
-          {groups.length > 0 && (
-            <Button type="button" disabled={isSaving || includedCount === 0} onClick={() => void handleImport()}>
-              <Upload />{isSaving ? "Importando..." : `Importar ${includedCount} lançamento${includedCount === 1 ? "" : "s"}`}
-            </Button>
+          {duplicates ? (
+            <>
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleIgnoreDuplicates()}>Ignorar duplicados</Button>
+              <Button type="button" disabled={isSaving || (pendingUniqueInputs.length === 0 && selectedDuplicates.size === 0)} onClick={() => void handleConfirmDuplicates()}>
+                <Upload />{isSaving ? "Importando..." : "Importar selecionados"}
+              </Button>
+            </>
+          ) : (
+            groups.length > 0 && (
+              <Button type="button" disabled={isSaving || isCheckingDuplicates || includedCount === 0} onClick={() => void handleImport()}>
+                <Upload />{isCheckingDuplicates ? "Checando duplicados..." : isSaving ? "Importando..." : `Importar ${includedCount} lançamento${includedCount === 1 ? "" : "s"}`}
+              </Button>
+            )
           )}
         </DialogFooter>
       </DialogContent>

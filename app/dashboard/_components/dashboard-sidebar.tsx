@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound, Wallet } from "lucide-react";
+import { CalendarDays, KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound, Wallet } from "lucide-react";
 
 import { AvatarFallback, AvatarRoot } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const navigation = [
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
   { href: "/dashboard/tasks", label: "Tarefas", icon: KanbanSquare },
   { href: "/dashboard/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/dashboard/settings", label: "Configurações", icon: Settings },
 ];
 
@@ -34,9 +35,9 @@ export default function DashboardSidebar() {
     >
       <Link href="/dashboard" className="flex shrink-0 items-center gap-3 px-1" aria-label="Ir para a visão geral">
         <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black tracking-[-0.08em] text-primary-foreground">
-          CA
+          iF
         </span>
-        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-foreground">ClienteApp</span>
+        <span className="text-[0.78rem] font-black uppercase tracking-[0.18em] text-foreground">izi Freelas</span>
       </Link>
 
       <nav className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible" aria-label="Navegação principal">
@@ -66,11 +67,11 @@ export default function DashboardSidebar() {
 
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           <AvatarRoot size="sm" className="bg-muted text-foreground ring-2 ring-background">
-            <AvatarFallback>CA</AvatarFallback>
+            <AvatarFallback>iF</AvatarFallback>
           </AvatarRoot>
           <div className="min-w-0">
             <p className="truncate text-xs font-bold text-foreground">Minha conta</p>
-            <p className="truncate text-[0.68rem] text-muted-foreground">ClienteApp</p>
+            <p className="truncate text-[0.68rem] text-muted-foreground">izi Freelas</p>
           </div>
         </div>
 

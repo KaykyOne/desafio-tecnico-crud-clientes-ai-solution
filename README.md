@@ -1,6 +1,6 @@
-# ClienteApp
+# izi Freelas
 
-ClienteApp é uma aplicação web para gerenciamento de clientes. A plataforma permite autenticar usuários, cadastrar e organizar contatos, acompanhar o status da carteira e atualizar os dados da conta.
+izi Freelas é uma aplicação web para gestão de freelancers e pequenos negócios. A plataforma permite autenticar usuários, cadastrar e organizar clientes, tarefas, agenda e financeiro num só lugar.
 
 ## Funcionalidades
 

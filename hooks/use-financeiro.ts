@@ -1,7 +1,7 @@
 "use client";
 
 //* Libraries Imports
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
@@ -18,6 +18,7 @@ export type FinanceiroRecord = {
   descricao: string | null;
   cliente_id: string | null;
   gasto_fixo_id: string | null;
+  banco_id: string | null;
   fitid: string | null;
   created_at: string;
 };
@@ -28,10 +29,32 @@ export type FinanceiroInput = {
   valor: number;
   descricao: string;
   cliente_id: string | null;
+  banco_id: string | null;
   fitid?: string | null;
 };
 
-const SELECT_COLUMNS = "id, user_id, data, tipo, valor, descricao, cliente_id, gasto_fixo_id, fitid, created_at";
+export type PeriodFilter = { mode: "month"; month: string } | { mode: "range"; start: string; end: string };
+
+const SELECT_COLUMNS = "id, user_id, data, tipo, valor, descricao, cliente_id, gasto_fixo_id, banco_id, fitid, created_at";
+
+function pad(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+export function getCurrentMonthValue() {
+  const now = new Date();
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+}
+
+export function getPeriodRange(period: PeriodFilter) {
+  if (period.mode === "range") return { start: period.start, end: period.end };
+
+  const [year, month] = period.month.split("-").map(Number);
+  const start = `${period.month}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${period.month}-${pad(lastDay)}`;
+  return { start, end };
+}
 
 function getSupabaseErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
@@ -47,6 +70,10 @@ function isUniqueViolation(error: unknown) {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
 }
 
+function duplicateKey(data: string, valor: number, descricao: string) {
+  return `${data}::${valor.toFixed(2)}::${descricao.trim().toLowerCase()}`;
+}
+
 async function getAuthenticatedUserId() {
   const { data, error } = await supabase.auth.getUser();
 
@@ -58,30 +85,32 @@ async function getAuthenticatedUserId() {
 }
 
 export function useFinanceiro() {
-  const [records, setRecords] = useState<FinanceiroRecord[]>([]);
+  const [allRecords, setAllRecords] = useState<FinanceiroRecord[]>([]);
   const [tipoFilter, setTipoFilter] = useState<FinanceiroTipo | "all">("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ mode: "month", month: getCurrentMonthValue() });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Fetched once per period (not per tipo), so cards agrupados por termo sempre veem todos os tipos do período.
   const fetchRecords = useCallback(async () => {
     setIsLoading(true);
 
     try {
       const userId = await getAuthenticatedUserId();
-      let query = supabase
+      const { start, end } = getPeriodRange(periodFilter);
+      const { data, error } = await supabase
         .from("financeiro")
         .select(SELECT_COLUMNS)
         .eq("user_id", userId)
+        .gte("data", start)
+        .lte("data", end)
         .order("data", { ascending: false })
         .order("created_at", { ascending: false });
 
-      if (tipoFilter !== "all") query = query.eq("tipo", tipoFilter);
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      setRecords((data ?? []) as FinanceiroRecord[]);
+      setAllRecords((data ?? []) as FinanceiroRecord[]);
     } catch (error) {
       toast.error("Não foi possível carregar o financeiro", {
         description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
@@ -90,7 +119,12 @@ export function useFinanceiro() {
     } finally {
       setIsLoading(false);
     }
-  }, [tipoFilter]);
+  }, [periodFilter]);
+
+  const records = useMemo(
+    () => (tipoFilter === "all" ? allRecords : allRecords.filter((record) => record.tipo === tipoFilter)),
+    [allRecords, tipoFilter]
+  );
 
   useEffect(() => {
     // The initial (and every filter-change) request owns its loading state inside fetchRecords.
@@ -126,6 +160,39 @@ export function useFinanceiro() {
       return false;
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  /** Entre os lançamentos informados, devolve os que já existem no financeiro (mesma data, valor e descrição). */
+  async function findDuplicates(inputs: FinanceiroInput[]) {
+    if (inputs.length === 0) return [] as FinanceiroInput[];
+
+    try {
+      const userId = await getAuthenticatedUserId();
+      const dates = inputs.map((input) => input.data);
+      const minDate = dates.reduce((min, date) => (date < min ? date : min));
+      const maxDate = dates.reduce((max, date) => (date > max ? date : max));
+
+      const { data, error } = await supabase
+        .from("financeiro")
+        .select("data, valor, descricao")
+        .eq("user_id", userId)
+        .gte("data", minDate)
+        .lte("data", maxDate);
+
+      if (error) throw error;
+
+      const existingKeys = new Set(
+        (data ?? []).map((record) => duplicateKey(record.data, record.valor, record.descricao ?? ""))
+      );
+
+      return inputs.filter((input) => existingKeys.has(duplicateKey(input.data, input.valor, input.descricao)));
+    } catch (error) {
+      toast.error("Não foi possível checar lançamentos duplicados", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
+      console.error("Erro ao checar lançamentos duplicados:", error);
+      return [];
     }
   }
 
@@ -171,7 +238,7 @@ export function useFinanceiro() {
       const { error } = await supabase.from("financeiro").delete().eq("id", id).eq("user_id", userId);
 
       if (error) throw error;
-      setRecords((current) => current.filter((record) => record.id !== id));
+      setAllRecords((current) => current.filter((record) => record.id !== id));
       toast.success("Lançamento excluído");
       return true;
     } catch (error) {
@@ -185,16 +252,47 @@ export function useFinanceiro() {
     }
   }
 
+  async function deleteRecords(ids: string[]) {
+    if (ids.length === 0) return false;
+
+    setIsBulkDeleting(true);
+
+    try {
+      const userId = await getAuthenticatedUserId();
+      const { error } = await supabase.from("financeiro").delete().in("id", ids).eq("user_id", userId);
+
+      if (error) throw error;
+      const idSet = new Set(ids);
+      setAllRecords((current) => current.filter((record) => !idSet.has(record.id)));
+      toast.success(`${ids.length} lançamento${ids.length === 1 ? "" : "s"} excluído${ids.length === 1 ? "" : "s"}`);
+      return true;
+    } catch (error) {
+      toast.error("Não foi possível excluir os lançamentos", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
+      console.error("Erro ao excluir lançamentos financeiros em lote:", error);
+      return false;
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }
+
   return {
     records,
+    allRecords,
     tipoFilter,
     setTipoFilter,
+    periodFilter,
+    setPeriodFilter,
     isLoading,
     isSaving,
     deletingId,
+    isBulkDeleting,
     createRecord,
+    findDuplicates,
     importRecords,
     deleteRecord,
+    deleteRecords,
     refreshRecords: fetchRecords,
   };
 }

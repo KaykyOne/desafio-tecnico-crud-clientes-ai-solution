@@ -7,7 +7,7 @@ export default function AuthBrand({ compact = false }: { compact?: boolean }) {
         <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">
           <UsersRound className="size-4" strokeWidth={2.5} />
         </span>
-        ClienteApp
+        izi Freelas
       </div>
     );
   }
@@ -17,7 +17,7 @@ export default function AuthBrand({ compact = false }: { compact?: boolean }) {
       <div className="mb-5 grid size-10 place-items-center rounded-md bg-muted text-foreground">
         <UsersRound className="size-5" strokeWidth={2.3} />
       </div>
-      <p className="text-[1.25rem] font-bold tracking-[-0.04em] text-foreground">ClienteApp</p>
+      <p className="text-[1.25rem] font-bold tracking-[-0.04em] text-foreground">izi Freelas</p>
       <p className="mt-3 max-w-[17rem] text-[0.78rem] font-semibold leading-5 text-muted-foreground">
         A plataforma simples para gerenciar seus clientes com clareza e eficiência.
       </p>
