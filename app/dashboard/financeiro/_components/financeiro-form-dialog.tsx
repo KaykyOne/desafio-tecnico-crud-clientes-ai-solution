@@ -13,10 +13,12 @@ import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } fro
 //* Types Imports
 import type { FinanceiroInput } from "@/hooks/use-financeiro";
 import type { ClientRecord } from "@/hooks/use-clients";
+import type { BancoRecord } from "@/hooks/use-bancos";
 
 type FinanceiroFormDialogProps = {
   open: boolean;
   clients: ClientRecord[];
+  bancos: BancoRecord[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: FinanceiroInput) => Promise<boolean>;
@@ -28,9 +30,10 @@ const emptyForm: FinanceiroInput = {
   valor: 0,
   descricao: "",
   cliente_id: null,
+  banco_id: null,
 };
 
-export default function FinanceiroFormDialog({ open, clients, isSaving, onOpenChange, onSubmit }: FinanceiroFormDialogProps) {
+export default function FinanceiroFormDialog({ open, clients, bancos, isSaving, onOpenChange, onSubmit }: FinanceiroFormDialogProps) {
   const [form, setForm] = useState<FinanceiroInput>(emptyForm);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -78,20 +81,38 @@ export default function FinanceiroFormDialog({ open, clients, isSaving, onOpenCh
             <Input id="financeiro-descricao" value={form.descricao} onChange={(event) => setForm((current) => ({ ...current, descricao: event.target.value }))} placeholder="Ex.: Almoço com cliente" className="h-11" />
           </div>
 
-          <div className="space-y-2">
-            <Label>Cliente (opcional)</Label>
-            <SelectRoot
-              value={form.cliente_id ?? "none"}
-              onValueChange={(value) => setForm((current) => ({ ...current, cliente_id: value === "none" ? null : value }))}
-            >
-              <SelectTrigger className="h-11 w-full bg-background">
-                <SelectValue>{clients.find((client) => client.id === form.cliente_id)?.name ?? "Nenhum"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {clients.map((client) => <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>)}
-              </SelectContent>
-            </SelectRoot>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Cliente (opcional)</Label>
+              <SelectRoot
+                value={form.cliente_id ?? "none"}
+                onValueChange={(value) => setForm((current) => ({ ...current, cliente_id: value === "none" ? null : value }))}
+              >
+                <SelectTrigger className="h-11 w-full bg-background">
+                  <SelectValue>{clients.find((client) => client.id === form.cliente_id)?.name ?? "Nenhum"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {clients.map((client) => <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>)}
+                </SelectContent>
+              </SelectRoot>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Banco (opcional)</Label>
+              <SelectRoot
+                value={form.banco_id ?? "none"}
+                onValueChange={(value) => setForm((current) => ({ ...current, banco_id: value === "none" ? null : value }))}
+              >
+                <SelectTrigger className="h-11 w-full bg-background">
+                  <SelectValue>{bancos.find((banco) => banco.id === form.banco_id)?.nome ?? "Nenhum"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {bancos.map((banco) => <SelectItem key={banco.id} value={banco.id}>{banco.nome}</SelectItem>)}
+                </SelectContent>
+              </SelectRoot>
+            </div>
           </div>
 
           <DialogFooter className="mt-6 border-t-0 bg-transparent p-0">

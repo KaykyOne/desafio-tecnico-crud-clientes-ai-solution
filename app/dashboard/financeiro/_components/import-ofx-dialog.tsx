@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 //* Types Imports
+import type { BancoRecord } from "@/hooks/use-bancos";
 import type { ClientRecord } from "@/hooks/use-clients";
 import type { FinanceiroInput } from "@/hooks/use-financeiro";
 import { parseOfxFile, type OfxGroup } from "@/lib/ofx";
@@ -26,6 +27,7 @@ type ReviewState = { include: boolean; tipo: "gasto" | "ganho"; cliente_id: stri
 type ImportOfxDialogProps = {
   open: boolean;
   clients: ClientRecord[];
+  bancos: BancoRecord[];
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
   onFindDuplicates: (inputs: FinanceiroInput[]) => Promise<FinanceiroInput[]>;
@@ -102,9 +104,10 @@ function GroupCard({ group, review, clients, onUpdate }: GroupCardProps) {
   );
 }
 
-export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange, onFindDuplicates, onImport }: ImportOfxDialogProps) {
+export default function ImportOfxDialog({ open, clients, bancos, isSaving, onOpenChange, onFindDuplicates, onImport }: ImportOfxDialogProps) {
   const [groups, setGroups] = useState<OfxGroup[]>([]);
   const [review, setReview] = useState<Record<string, ReviewState>>({});
+  const [bancoId, setBancoId] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [duplicates, setDuplicates] = useState<FinanceiroInput[] | null>(null);
@@ -114,6 +117,7 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
   function reset() {
     setGroups([]);
     setReview({});
+    setBancoId(null);
     setDuplicates(null);
     setPendingUniqueInputs([]);
     setSelectedDuplicates(new Set());
@@ -163,6 +167,7 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
         valor: transaction.valor,
         descricao: transaction.descricao,
         cliente_id: groupReview.cliente_id,
+        banco_id: bancoId,
         fitid: transaction.fitid,
       }));
     });
@@ -255,6 +260,19 @@ export default function ImportOfxDialog({ open, clients, isSaving, onOpenChange,
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Esses dados são de qual banco? (opcional)</Label>
+              <SelectRoot value={bancoId ?? "none"} onValueChange={(value) => setBancoId(value === "none" ? null : value)}>
+                <SelectTrigger className="h-10 w-full bg-background sm:max-w-xs">
+                  <SelectValue>{bancos.find((banco) => banco.id === bancoId)?.nome ?? "Não quero informar o banco"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não quero informar o banco</SelectItem>
+                  {bancos.map((banco) => <SelectItem key={banco.id} value={banco.id}>{banco.nome}</SelectItem>)}
+                </SelectContent>
+              </SelectRoot>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                 <div className="flex items-center gap-2 text-emerald-800"><TrendingUp className="size-4" /><span className="text-xs font-bold uppercase tracking-[0.1em]">Ganhos</span></div>

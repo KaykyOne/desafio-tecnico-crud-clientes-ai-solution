@@ -1,7 +1,7 @@
 "use client";
 
 //* Libraries Imports
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
@@ -18,6 +18,7 @@ export type FinanceiroRecord = {
   descricao: string | null;
   cliente_id: string | null;
   gasto_fixo_id: string | null;
+  banco_id: string | null;
   fitid: string | null;
   created_at: string;
 };
@@ -28,12 +29,13 @@ export type FinanceiroInput = {
   valor: number;
   descricao: string;
   cliente_id: string | null;
+  banco_id: string | null;
   fitid?: string | null;
 };
 
 export type PeriodFilter = { mode: "month"; month: string } | { mode: "range"; start: string; end: string };
 
-const SELECT_COLUMNS = "id, user_id, data, tipo, valor, descricao, cliente_id, gasto_fixo_id, fitid, created_at";
+const SELECT_COLUMNS = "id, user_id, data, tipo, valor, descricao, cliente_id, gasto_fixo_id, banco_id, fitid, created_at";
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -83,7 +85,7 @@ async function getAuthenticatedUserId() {
 }
 
 export function useFinanceiro() {
-  const [records, setRecords] = useState<FinanceiroRecord[]>([]);
+  const [allRecords, setAllRecords] = useState<FinanceiroRecord[]>([]);
   const [tipoFilter, setTipoFilter] = useState<FinanceiroTipo | "all">("all");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ mode: "month", month: getCurrentMonthValue() });
   const [isLoading, setIsLoading] = useState(true);
@@ -91,13 +93,14 @@ export function useFinanceiro() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Fetched once per period (not per tipo), so cards agrupados por termo sempre veem todos os tipos do período.
   const fetchRecords = useCallback(async () => {
     setIsLoading(true);
 
     try {
       const userId = await getAuthenticatedUserId();
       const { start, end } = getPeriodRange(periodFilter);
-      let query = supabase
+      const { data, error } = await supabase
         .from("financeiro")
         .select(SELECT_COLUMNS)
         .eq("user_id", userId)
@@ -106,12 +109,8 @@ export function useFinanceiro() {
         .order("data", { ascending: false })
         .order("created_at", { ascending: false });
 
-      if (tipoFilter !== "all") query = query.eq("tipo", tipoFilter);
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      setRecords((data ?? []) as FinanceiroRecord[]);
+      setAllRecords((data ?? []) as FinanceiroRecord[]);
     } catch (error) {
       toast.error("Não foi possível carregar o financeiro", {
         description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
@@ -120,7 +119,12 @@ export function useFinanceiro() {
     } finally {
       setIsLoading(false);
     }
-  }, [tipoFilter, periodFilter]);
+  }, [periodFilter]);
+
+  const records = useMemo(
+    () => (tipoFilter === "all" ? allRecords : allRecords.filter((record) => record.tipo === tipoFilter)),
+    [allRecords, tipoFilter]
+  );
 
   useEffect(() => {
     // The initial (and every filter-change) request owns its loading state inside fetchRecords.
@@ -234,7 +238,7 @@ export function useFinanceiro() {
       const { error } = await supabase.from("financeiro").delete().eq("id", id).eq("user_id", userId);
 
       if (error) throw error;
-      setRecords((current) => current.filter((record) => record.id !== id));
+      setAllRecords((current) => current.filter((record) => record.id !== id));
       toast.success("Lançamento excluído");
       return true;
     } catch (error) {
@@ -259,7 +263,7 @@ export function useFinanceiro() {
 
       if (error) throw error;
       const idSet = new Set(ids);
-      setRecords((current) => current.filter((record) => !idSet.has(record.id)));
+      setAllRecords((current) => current.filter((record) => !idSet.has(record.id)));
       toast.success(`${ids.length} lançamento${ids.length === 1 ? "" : "s"} excluído${ids.length === 1 ? "" : "s"}`);
       return true;
     } catch (error) {
@@ -275,6 +279,7 @@ export function useFinanceiro() {
 
   return {
     records,
+    allRecords,
     tipoFilter,
     setTipoFilter,
     periodFilter,

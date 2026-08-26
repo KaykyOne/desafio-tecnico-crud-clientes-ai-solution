@@ -1,26 +1,32 @@
 "use client";
 
 //* Libraries Imports
-import { useEffect, useState } from "react";
-import { Download, Plus, Repeat, Trash2, Upload } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Building2, Download, Plus, Repeat, Search, Trash2, Upload } from "lucide-react";
 
 //* Components Imports
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Table from "@/components/ui/table";
 
 //* Hooks Imports
+import { useBancos } from "@/hooks/use-bancos";
 import { useClients } from "@/hooks/use-clients";
 import { useFinanceiro, type FinanceiroRecord, type FinanceiroTipo } from "@/hooks/use-financeiro";
+import { useFinanceiroGrupos } from "@/hooks/use-financeiro-grupos";
 import { useGastosFixos } from "@/hooks/use-gastos-fixos";
 
 //* Utils Imports
 import { exportFinanceiroToCsv } from "@/lib/financeiro-csv";
+import { normalizeText } from "@/lib/normalize-text";
 
+import BancosDialog from "./_components/bancos-dialog";
 import DeleteFinanceiroDialog from "./_components/delete-financeiro-dialog";
 import FinanceiroFormDialog from "./_components/financeiro-form-dialog";
+import FinanceiroGrupos from "./_components/financeiro-grupos";
 import FinanceiroSkeleton from "./_components/financeiro-skeleton";
 import GastosFixosDialog from "./_components/gastos-fixos-dialog";
 import ImportOfxDialog from "./_components/import-ofx-dialog";
@@ -41,9 +47,17 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
+/** Extrai um número de algo como "50", "50 reais" ou "R$ 50,00". */
+function parseValorBusca(value: string) {
+  const cleaned = value.replace(/[^\d.,]/g, "").replace(",", ".");
+  const parsed = Number.parseFloat(cleaned);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 export default function FinanceiroPage() {
   const {
     records,
+    allRecords,
     tipoFilter,
     setTipoFilter,
     periodFilter,
@@ -60,29 +74,47 @@ export default function FinanceiroPage() {
   } = useFinanceiro();
   const { clients } = useClients();
   const gastosFixosState = useGastosFixos();
+  const gruposState = useFinanceiroGrupos();
+  const bancosState = useBancos();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGastosFixosOpen, setIsGastosFixosOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isBancosOpen, setIsBancosOpen] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState<FinanceiroRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [descricaoBusca, setDescricaoBusca] = useState("");
+  const [valorBusca, setValorBusca] = useState("");
+
+  const filteredRecords = useMemo(() => {
+    const normalizedSearch = normalizeText(descricaoBusca);
+    const valorAlvo = parseValorBusca(valorBusca);
+    const valorMin = valorAlvo !== null ? valorAlvo * 0.9 : null;
+    const valorMax = valorAlvo !== null ? valorAlvo * 1.1 : null;
+
+    return records.filter((record) => {
+      if (normalizedSearch && !normalizeText(record.descricao ?? "").includes(normalizedSearch)) return false;
+      if (valorMin !== null && valorMax !== null && (record.valor < valorMin || record.valor > valorMax)) return false;
+      return true;
+    });
+  }, [records, descricaoBusca, valorBusca]);
 
   useEffect(() => {
     // Selection only makes sense scoped to the currently filtered/loaded records.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIds((current) => {
-      const validIds = new Set(records.map((record) => record.id));
+      const validIds = new Set(filteredRecords.map((record) => record.id));
       const next = new Set([...current].filter((id) => validIds.has(id)));
       return next.size === current.size ? current : next;
     });
-  }, [records]);
+  }, [filteredRecords]);
 
-  const total = records.reduce((sum, record) => sum + (record.tipo === "ganho" ? record.valor : -record.valor), 0);
-  const allSelected = records.length > 0 && selectedIds.size === records.length;
+  const total = filteredRecords.reduce((sum, record) => sum + (record.tipo === "ganho" ? record.valor : -record.valor), 0);
+  const allSelected = filteredRecords.length > 0 && selectedIds.size === filteredRecords.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
   function toggleSelectAll() {
-    setSelectedIds(allSelected ? new Set() : new Set(records.map((record) => record.id)));
+    setSelectedIds(allSelected ? new Set() : new Set(filteredRecords.map((record) => record.id)));
   }
 
   function toggleSelect(id: string, checked: boolean) {
@@ -95,8 +127,8 @@ export default function FinanceiroPage() {
   }
 
   function handleExport() {
-    const toExport = selectedIds.size > 0 ? records.filter((record) => selectedIds.has(record.id)) : records;
-    exportFinanceiroToCsv(toExport, clients, `extrato-${new Date().toISOString().slice(0, 10)}.csv`);
+    const toExport = selectedIds.size > 0 ? filteredRecords.filter((record) => selectedIds.has(record.id)) : filteredRecords;
+    exportFinanceiroToCsv(toExport, clients, bancosState.bancos, `extrato-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
   async function handleBulkDelete() {
@@ -114,6 +146,7 @@ export default function FinanceiroPage() {
           <p className="mt-2 text-sm text-muted-foreground">Acompanhe gastos, gastos fixos e ganhos num único lugar.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="h-11 px-4 font-bold" onClick={() => setIsBancosOpen(true)}><Building2 />Bancos</Button>
           <Button type="button" variant="outline" className="h-11 px-4 font-bold" onClick={() => setIsGastosFixosOpen(true)}><Repeat />Gastos fixos</Button>
           <Button type="button" variant="outline" className="h-11 px-4 font-bold" onClick={() => setIsImportOpen(true)}><Upload />Importar OFX</Button>
           <Button type="button" className="h-11 px-4 font-bold" onClick={() => setIsFormOpen(true)}><Plus />Novo lançamento</Button>
@@ -144,19 +177,53 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
+      <FinanceiroGrupos
+        grupos={gruposState.grupos}
+        records={allRecords}
+        isSaving={gruposState.isSaving}
+        deletingId={gruposState.deletingId}
+        onCreate={gruposState.createGrupo}
+        onUpdate={gruposState.updateGrupo}
+        onDelete={gruposState.deleteGrupo}
+      />
+
       {isLoading ? (
         <FinanceiroSkeleton />
       ) : (
         <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="relative">
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={descricaoBusca}
+                onChange={(event) => setDescricaoBusca(event.target.value)}
+                placeholder="Buscar por descrição..."
+                aria-label="Buscar por descrição"
+                className="h-10 bg-background pl-9"
+              />
+            </div>
+            <div className="relative">
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={valorBusca}
+                onChange={(event) => setValorBusca(event.target.value)}
+                placeholder="Buscar por valor aproximado (±10%)..."
+                aria-label="Buscar por valor aproximado"
+                inputMode="decimal"
+                className="h-10 bg-background pl-9"
+              />
+            </div>
+          </div>
+
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" size="sm" disabled={records.length === 0} onClick={toggleSelectAll}>
+              <Button type="button" variant="outline" size="sm" disabled={filteredRecords.length === 0} onClick={toggleSelectAll}>
                 {allSelected ? "Limpar seleção" : "Selecionar todos"}
               </Button>
               {selectedIds.size > 0 && <p className="text-sm font-semibold text-muted-foreground">{selectedIds.size} selecionado{selectedIds.size === 1 ? "" : "s"}</p>}
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={records.length === 0} onClick={handleExport}>
+              <Button type="button" variant="outline" size="sm" disabled={filteredRecords.length === 0} onClick={handleExport}>
                 <Download />{selectedIds.size > 0 ? "Exportar selecionados" : "Exportar Excel"}
               </Button>
               {selectedIds.size > 0 && (
@@ -170,21 +237,23 @@ export default function FinanceiroPage() {
           <Table.TableRoot>
             <Table.TableHeader>
               <Table.TableRow className="hover:bg-transparent">
-                <Table.TableHead className="w-10 px-3"><Checkbox checked={allSelected} indeterminate={someSelected} onCheckedChange={toggleSelectAll} disabled={records.length === 0} aria-label="Selecionar todos os lançamentos" /></Table.TableHead>
+                <Table.TableHead className="w-10 px-3"><Checkbox checked={allSelected} indeterminate={someSelected} onCheckedChange={toggleSelectAll} disabled={filteredRecords.length === 0} aria-label="Selecionar todos os lançamentos" /></Table.TableHead>
                 <Table.TableHead className="px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Data</Table.TableHead>
                 <Table.TableHead className="px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Tipo</Table.TableHead>
                 <Table.TableHead className="px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Descrição</Table.TableHead>
                 <Table.TableHead className="px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Cliente</Table.TableHead>
+                <Table.TableHead className="px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Banco</Table.TableHead>
                 <Table.TableHead className="px-3 text-right text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Valor</Table.TableHead>
                 <Table.TableHead className="px-3 text-right text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Ações</Table.TableHead>
               </Table.TableRow>
             </Table.TableHeader>
             <Table.TableBody>
-              {records.length === 0 ? (
-                <Table.TableRow><Table.TableCell colSpan={7} className="h-40 text-center"><p className="font-semibold">Nenhum lançamento encontrado</p><p className="mt-1 text-sm text-muted-foreground">Ajuste o período/tipo, cadastre um lançamento ou importe um extrato OFX.</p></Table.TableCell></Table.TableRow>
+              {filteredRecords.length === 0 ? (
+                <Table.TableRow><Table.TableCell colSpan={8} className="h-40 text-center"><p className="font-semibold">Nenhum lançamento encontrado</p><p className="mt-1 text-sm text-muted-foreground">Ajuste o período/tipo/busca, cadastre um lançamento ou importe um extrato OFX.</p></Table.TableCell></Table.TableRow>
               ) : (
-                records.map((record) => {
+                filteredRecords.map((record) => {
                   const client = clients.find((candidate) => candidate.id === record.cliente_id);
+                  const banco = bancosState.bancos.find((candidate) => candidate.id === record.banco_id);
                   return (
                     <Table.TableRow key={record.id} data-selected={selectedIds.has(record.id) || undefined} className="data-selected:bg-accent/60">
                       <Table.TableCell className="px-3"><Checkbox checked={selectedIds.has(record.id)} onCheckedChange={(checked) => toggleSelect(record.id, checked === true)} aria-label={`Selecionar ${record.descricao ?? "lançamento"}`} /></Table.TableCell>
@@ -192,6 +261,7 @@ export default function FinanceiroPage() {
                       <Table.TableCell className="px-3 py-4"><Badge variant="outline" className={tipoStyles[record.tipo]}>{tipoLabels[record.tipo]}</Badge></Table.TableCell>
                       <Table.TableCell className="px-3 py-4 font-semibold">{record.descricao || "—"}</Table.TableCell>
                       <Table.TableCell className="px-3 py-4 text-muted-foreground">{client?.name ?? "—"}</Table.TableCell>
+                      <Table.TableCell className="px-3 py-4 text-muted-foreground">{banco?.nome ?? "—"}</Table.TableCell>
                       <Table.TableCell className={`px-3 py-4 text-right font-semibold ${record.tipo === "ganho" ? "text-emerald-700" : "text-foreground"}`}>{record.tipo === "ganho" ? "+" : "-"}{formatCurrency(record.valor)}</Table.TableCell>
                       <Table.TableCell className="px-3 py-4 text-right"><Button type="button" variant="ghost" size="icon-sm" onClick={() => setDeletingRecord(record)} aria-label={`Excluir ${record.descricao ?? "lançamento"}`}><Trash2 /></Button></Table.TableCell>
                     </Table.TableRow>
@@ -203,8 +273,17 @@ export default function FinanceiroPage() {
         </div>
       )}
 
-      <FinanceiroFormDialog open={isFormOpen} clients={clients} isSaving={isSaving} onOpenChange={setIsFormOpen} onSubmit={createRecord} />
-      <ImportOfxDialog open={isImportOpen} clients={clients} isSaving={isSaving} onOpenChange={setIsImportOpen} onFindDuplicates={findDuplicates} onImport={importRecords} />
+      <FinanceiroFormDialog open={isFormOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsFormOpen} onSubmit={createRecord} />
+      <ImportOfxDialog open={isImportOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsImportOpen} onFindDuplicates={findDuplicates} onImport={importRecords} />
+      <BancosDialog
+        open={isBancosOpen}
+        bancos={bancosState.bancos}
+        isSaving={bancosState.isSaving}
+        deletingId={bancosState.deletingId}
+        onOpenChange={setIsBancosOpen}
+        onCreate={bancosState.createBanco}
+        onDelete={bancosState.deleteBanco}
+      />
       <GastosFixosDialog
         open={isGastosFixosOpen}
         gastosFixos={gastosFixosState.gastosFixos}
