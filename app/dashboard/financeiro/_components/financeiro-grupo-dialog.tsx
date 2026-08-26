@@ -81,58 +81,63 @@ export default function FinanceiroGrupoDialog({ grupo, records, isSaving, onOpen
           <p className="mt-1 text-xs opacity-75">{matching.length === 0 ? "Nenhum lançamento" : matching.length === 1 ? "1 lançamento" : `${matching.length} lançamentos`}</p>
         </div>
 
-        <div className="min-w-0 space-y-2">
-          <Label>Palavras-chave</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {termos.map((termo) => (
-              <span key={termo} className="flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-xs font-medium">
-                {termo}
-                <button type="button" onClick={() => removeTermo(termo)} aria-label={`Remover palavra ${termo}`} className="text-muted-foreground hover:text-foreground">
-                  <X className="size-3" />
-                </button>
-              </span>
-            ))}
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          <div className="min-w-0 space-y-2">
+            <Label>Palavras-chave</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {termos.map((termo) => (
+                <span key={termo} className="flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-xs font-medium">
+                  {termo}
+                  <button type="button" onClick={() => removeTermo(termo)} aria-label={`Remover palavra ${termo}`} className="text-muted-foreground hover:text-foreground">
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={newTermo}
+                onChange={(event) => setNewTermo(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Adicionar palavra..."
+                aria-label="Nova palavra-chave"
+                className="h-9 bg-background"
+              />
+              <Button type="button" size="icon-sm" variant="outline" disabled={!newTermo.trim()} onClick={addTermo} aria-label="Adicionar palavra">
+                <Plus />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              value={newTermo}
-              onChange={(event) => setNewTermo(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Adicionar palavra..."
-              aria-label="Nova palavra-chave"
-              className="h-9 bg-background"
-            />
-            <Button type="button" size="icon-sm" variant="outline" disabled={!newTermo.trim()} onClick={addTermo} aria-label="Adicionar palavra">
-              <Plus />
-            </Button>
+          <div>
+            {termos.length > 1 && (
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="grupo-nome">Nome do card</Label>
+                <Input id="grupo-nome" value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Ex.: Assinaturas" className="h-10 bg-background" />
+              </div>
+            )}
+
+            {matching.length > 0 && (
+              <div className="min-w-0 space-y-2">
+                <Label>Lançamentos usados no cálculo</Label>
+                <ul className="max-h-48 min-w-0 space-y-1.5 overflow-y-auto rounded-lg border p-2">
+                  {matching.map((record) => (
+                    <li key={record.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{record.descricao || "Sem descrição"}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(record.data)}</p>
+                      </div>
+                      <p className={`shrink-0 font-semibold ${record.tipo === "ganho" ? "text-emerald-700" : "text-foreground"}`}>
+                        {record.tipo === "ganho" ? "+" : "-"}{formatCurrency(record.valor)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
-        {termos.length > 1 && (
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor="grupo-nome">Nome do card</Label>
-            <Input id="grupo-nome" value={nome} onChange={(event) => setNome(event.target.value)} placeholder="Ex.: Assinaturas" className="h-10 bg-background" />
-          </div>
-        )}
 
-        {matching.length > 0 && (
-          <div className="min-w-0 space-y-2">
-            <Label>Lançamentos usados no cálculo</Label>
-            <ul className="max-h-48 min-w-0 space-y-1.5 overflow-y-auto rounded-lg border p-2">
-              {matching.map((record) => (
-                <li key={record.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{record.descricao || "Sem descrição"}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(record.data)}</p>
-                  </div>
-                  <p className={`shrink-0 font-semibold ${record.tipo === "ganho" ? "text-emerald-700" : "text-foreground"}`}>
-                    {record.tipo === "ganho" ? "+" : "-"}{formatCurrency(record.valor)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <DialogFooter className="mt-2 min-w-0 flex-wrap border-t-0 bg-transparent p-0 sm:justify-between">
           <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" disabled={isSaving} onClick={() => void onDelete(grupo.id)}>
