@@ -2,7 +2,7 @@
 
 //* Libraries Imports
 import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
-import { CalendarDays, Clock3, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Clock3, Pencil, Trash2, User } from "lucide-react";
 
 //* Components Imports
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,13 @@ import { cn } from "@/lib/utils";
 
 type TaskCardProps = {
   task: TaskRecord;
+  clientName?: string;
   isDragging?: boolean;
   draggableAttributes?: DraggableAttributes;
   draggableListeners?: DraggableSyntheticListeners;
   onEdit?: (task: TaskRecord) => void;
   onDelete?: (task: TaskRecord) => void;
+  onQuickEdit?: (task: TaskRecord) => void;
 };
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -55,11 +57,13 @@ function formatDueDate(date: string) {
 
 export default function TaskCard({
   task,
+  clientName,
   isDragging,
   draggableAttributes,
   draggableListeners,
   onEdit,
   onDelete,
+  onQuickEdit,
 }: TaskCardProps) {
   return (
     <article
@@ -74,7 +78,22 @@ export default function TaskCard({
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 font-semibold leading-snug">{task.title}</h3>
-        <Badge variant="outline" className={cn("shrink-0", priorityBadgeStyles[task.priority])}>
+        <Badge
+          variant="outline"
+          {...(onQuickEdit
+            ? {
+                render: <button type="button" />,
+                onClick: () => onQuickEdit(task),
+                "aria-label": `Alterar prioridade e cliente de ${task.title}`,
+                title: "Alterar prioridade e cliente",
+              }
+            : {})}
+          className={cn(
+            "shrink-0",
+            priorityBadgeStyles[task.priority],
+            onQuickEdit && "cursor-pointer hover:brightness-110",
+          )}
+        >
           {priorityLabels[task.priority]}
         </Badge>
       </div>
@@ -99,6 +118,12 @@ export default function TaskCard({
           <Clock3 className="size-3.5" />
           {task.average_duration_minutes} min
         </span>
+        {clientName && (
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <User className="size-3.5 shrink-0" />
+            <span className="truncate">{clientName}</span>
+          </span>
+        )}
       </div>
 
       {(onEdit || onDelete) && (
