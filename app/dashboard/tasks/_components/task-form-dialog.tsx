@@ -193,7 +193,7 @@ export default function TaskFormDialog({
             </SelectRoot>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="task-duration">Tempo médio (minutos)</Label>
+            <Label htmlFor="task-duration">Tempo estimado (minutos)</Label>
             <Input
               id="task-duration"
               type="number"

@@ -5,7 +5,8 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCorners,
   useSensor,
   useSensors,
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 //* Hooks Imports
 import { useClients } from "@/hooks/use-clients";
 import { useTaskColumns } from "@/hooks/use-task-columns";
+import { useTaskTimer } from "@/hooks/use-task-timer";
 import { useTasks, type TaskRecord } from "@/hooks/use-tasks";
 
 //* Components Imports
@@ -31,6 +33,7 @@ import ManageColumnsDialog from "./_components/manage-columns-dialog";
 import TaskCard from "./_components/task-card";
 import TaskFormDialog from "./_components/task-form-dialog";
 import TaskQuickEditSheet from "./_components/task-quick-edit-sheet";
+import TaskTimeSummary from "./_components/task-time-summary";
 
 export default function TasksPage() {
   const {
@@ -46,6 +49,19 @@ export default function TasksPage() {
   } = useTasks();
   const { clients } = useClients();
   const {
+    runningTaskId,
+    runningStartedAt,
+    secondsByTaskId,
+    totais,
+    totaisAtualizadosEm,
+    isLoading: isLoadingTimer,
+    isSaving: isSavingTimer,
+    startTimer,
+    stopTimer,
+    discardTimer,
+    refreshTimer,
+  } = useTaskTimer();
+  const {
     columns,
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns,
@@ -60,8 +76,13 @@ export default function TasksPage() {
   const [activeTask, setActiveTask] = useState<TaskRecord | null>(null);
   const [quickEditTaskId, setQuickEditTaskId] = useState<string | null>(null);
   const [isManagingColumns, setIsManagingColumns] = useState(false);
+  // Mouse e toque separados de propósito: um PointerSensor único atenderia os dois pelo mesmo
+  // caminho, e o `delay` que o toque precisa viraria uma espera de 220ms antes de todo arrasto no
+  // desktop. Assim o mouse mantém o comportamento antigo e só o dedo precisa segurar — e a escolha
+  // é por tipo de entrada, não por largura de tela (notebook com touchscreen ganha os dois).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
     useSensor(KeyboardSensor),
   );
 
@@ -100,6 +121,22 @@ export default function TasksPage() {
   );
   const isLoading = isLoadingTasks || isLoadingColumns;
   const clientNameById = Object.fromEntries(clients.map((client) => [client.id, client.name]));
+  const timerProps = {
+    runningTaskId,
+    runningStartedAt,
+    secondsByTaskId,
+    isSaving: isSavingTimer,
+    onStart: (taskId: string) => void startTimer(taskId),
+    onStop: () => void stopTimer(),
+  };
+
+  // A tarefa excluída leva junto suas entradas de tempo (cascade). Se a excluída for a que estava
+  // rodando, sem isto sobraria um cronômetro fantasma nos totais.
+  async function handleDeleteTask(id: string) {
+    const success = await deleteTask(id);
+    if (success) void refreshTimer();
+    return success;
+  }
   // Lido da lista (e não guardado em estado) pro Sheet refletir cada alteração salva na hora.
   const quickEditTask = tasks.find((task) => task.id === quickEditTaskId) ?? null;
 
@@ -110,8 +147,14 @@ export default function TasksPage() {
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">Organização</p>
           <h1 className="text-3xl font-bold tracking-[-0.05em] text-foreground">Tarefas</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Arraste as tarefas entre as colunas para acompanhar cada etapa. Use a alça no cabeçalho para reordenar as
-            colunas.
+            <span className="hidden md:inline">
+              Arraste as tarefas entre as colunas para acompanhar cada etapa. Use a alça no cabeçalho para reordenar as
+              colunas.
+            </span>
+            <span className="md:hidden">
+              Deslize para o lado para ver as outras colunas. Segure um card por um instante para arrastá-lo — ou use o
+              botão de mover no próprio card.
+            </span>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -130,6 +173,12 @@ export default function TasksPage() {
           </Button>
         </div>
       </div>
+      <TaskTimeSummary
+        totais={totais}
+        totaisAtualizadosEm={totaisAtualizadosEm}
+        isRunning={runningTaskId !== null}
+        isLoading={isLoadingTimer}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -140,6 +189,7 @@ export default function TasksPage() {
           tasks={tasks}
           columns={columns}
           clientNameById={clientNameById}
+          timer={timerProps}
           isLoading={isLoading}
           onEdit={openEditDialog}
           onDelete={setDeletingTask}
@@ -160,10 +210,13 @@ export default function TasksPage() {
         <TaskQuickEditSheet
           task={quickEditTask}
           clients={clients}
+          columns={columns}
+          timer={{ ...timerProps, onDiscard: () => void discardTimer() }}
           onOpenChange={(open) => {
             if (!open) setQuickEditTaskId(null);
           }}
           onPatch={quickUpdateTask}
+          onMoveToColumn={updateTaskColumn}
         />
       )}
       <TaskFormDialog
@@ -190,11 +243,12 @@ export default function TasksPage() {
       <DeleteTaskDialog
         open={Boolean(deletingTask)}
         taskTitle={deletingTask?.title ?? ""}
+        loggedSeconds={deletingTask ? (secondsByTaskId[deletingTask.id] ?? 0) : 0}
         isDeleting={Boolean(deletingTaskId)}
         onOpenChange={(open) => {
           if (!open) setDeletingTask(null);
         }}
-        onConfirm={() => (deletingTask ? deleteTask(deletingTask.id) : Promise.resolve(false))}
+        onConfirm={() => (deletingTask ? handleDeleteTask(deletingTask.id) : Promise.resolve(false))}
       />
     </section>
   );

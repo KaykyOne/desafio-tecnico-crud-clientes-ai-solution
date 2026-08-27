@@ -1,0 +1,283 @@
+"use client";
+
+//* Libraries Imports
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+//* Services Imports
+import { supabase } from "./supabase";
+
+//* Utils Imports
+import { formatDuration, secondsSince } from "@/lib/format-duration";
+
+export type TaskTimeEntryRecord = {
+  id: string;
+  user_id: string;
+  task_id: string;
+  started_at: string;
+  ended_at: string | null;
+  created_at: string;
+};
+
+export type TaskTimeTotais = { hojeSegundos: number; semanaSegundos: number; mesSegundos: number };
+
+const SELECT_COLUMNS = "id, user_id, task_id, started_at, ended_at, created_at";
+const TOTAIS_ZERADOS: TaskTimeTotais = { hojeSegundos: 0, semanaSegundos: 0, mesSegundos: 0 };
+
+function getSupabaseErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String(error.message);
+    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
+    return `${message}${code}`;
+  }
+
+  return fallback;
+}
+
+function isUniqueViolation(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
+}
+
+async function getAuthenticatedUserId() {
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    throw new Error("Sua sessão expirou. Entre novamente.");
+  }
+
+  return data.user.id;
+}
+
+/** Fuso do navegador, com o Brasil como rede de segurança — os totais são agrupados por dia local. */
+function getTimezone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
+}
+
+/**
+ * Cronômetro de execução de tarefas.
+ *
+ * O tempo decorrido nunca é acumulado no cliente: o `started_at` é gravado pelo Postgres e o
+ * elapsed é sempre derivado dele. Por isso o cronômetro sobrevive a refresh, fechar a aba ou
+ * trocar de dispositivo — e por isso não é preciso websocket nenhum.
+ */
+export function useTaskTimer() {
+  const [runningEntry, setRunningEntry] = useState<TaskTimeEntryRecord | null>(null);
+  const [secondsByTaskId, setSecondsByTaskId] = useState<Record<string, number>>({});
+  const [totais, setTotais] = useState<TaskTimeTotais>(TOTAIS_ZERADOS);
+  /**
+   * Momento em que `totais` era exato. A UI soma o tempo decorrido daqui pra frente pra ticar ao
+   * vivo — a RPC já embute o cronômetro em curso (via `coalesce(ended_at, now())`), então somar o
+   * decorrido inteiro contaria o mesmo tempo duas vezes.
+   */
+  const [totaisAtualizadosEm, setTotaisAtualizadosEm] = useState(() => Date.now());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchTimer = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      const userId = await getAuthenticatedUserId();
+      const [ativa, totaisResult, porTarefa] = await Promise.all([
+        supabase.from("task_time_entries").select(SELECT_COLUMNS).eq("user_id", userId).is("ended_at", null).maybeSingle(),
+        supabase.rpc("task_time_totais", { p_timezone: getTimezone() }),
+        supabase.rpc("task_time_por_tarefa"),
+      ]);
+
+      if (ativa.error) throw ativa.error;
+      if (totaisResult.error) throw totaisResult.error;
+      if (porTarefa.error) throw porTarefa.error;
+
+      setRunningEntry((ativa.data as TaskTimeEntryRecord | null) ?? null);
+
+      const linhaTotais = (totaisResult.data ?? [])[0];
+      setTotais(
+        linhaTotais
+          ? {
+              hojeSegundos: Number(linhaTotais.hoje_segundos ?? 0),
+              semanaSegundos: Number(linhaTotais.semana_segundos ?? 0),
+              mesSegundos: Number(linhaTotais.mes_segundos ?? 0),
+            }
+          : TOTAIS_ZERADOS,
+      );
+      setTotaisAtualizadosEm(Date.now());
+
+      setSecondsByTaskId(
+        Object.fromEntries(
+          ((porTarefa.data ?? []) as { task_id: string; segundos: number | string }[]).map((linha) => [
+            linha.task_id,
+            Number(linha.segundos),
+          ]),
+        ),
+      );
+    } catch (error) {
+      toast.error("Não foi possível carregar os cronômetros", {
+        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+      });
+      console.error("Erro ao carregar cronômetros:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // The initial request owns its loading state inside fetchTimer.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTimer();
+  }, [fetchTimer]);
+
+  // Sem Realtime: outra aba pode ter iniciado/parado um cronômetro. Resincroniza quando esta aba
+  // volta a ficar visível, que é exatamente o momento em que o usuário perceberia a diferença.
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") void fetchTimer();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [fetchTimer]);
+
+  /** Finaliza o cronômetro ativo no servidor. Devolve os segundos gravados, ou null se nada rodava. */
+  async function finalizarNoServidor() {
+    const { data, error } = await supabase.rpc("task_time_finalizar");
+    if (error) throw error;
+
+    const entrada = (Array.isArray(data) ? data[0] : data) as TaskTimeEntryRecord | null;
+    if (!entrada?.ended_at) return null;
+
+    const segundos = Math.max(
+      0,
+      Math.floor((new Date(entrada.ended_at).getTime() - new Date(entrada.started_at).getTime()) / 1000),
+    );
+    return { taskId: entrada.task_id, segundos };
+  }
+
+  function aplicarSegundos(taskId: string, segundos: number) {
+    setSecondsByTaskId((current) => ({ ...current, [taskId]: (current[taskId] ?? 0) + segundos }));
+    setTotais((current) => ({
+      hojeSegundos: current.hojeSegundos + segundos,
+      semanaSegundos: current.semanaSegundos + segundos,
+      mesSegundos: current.mesSegundos + segundos,
+    }));
+  }
+
+  async function stopTimer() {
+    if (!runningEntry) return true;
+
+    setIsSaving(true);
+
+    try {
+      const finalizado = await finalizarNoServidor();
+      setRunningEntry(null);
+
+      if (finalizado) {
+        aplicarSegundos(finalizado.taskId, finalizado.segundos);
+        toast.success(`Tempo registrado: ${formatDuration(finalizado.segundos)}`);
+      }
+
+      // Reconcilia com os números autoritativos do banco (o otimista acima é só pra UI responder na hora).
+      void fetchTimer();
+      return true;
+    } catch (error) {
+      toast.error("Não foi possível finalizar o cronômetro", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
+      console.error("Erro ao finalizar cronômetro:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function startTimer(taskId: string) {
+    if (runningEntry?.task_id === taskId) return true;
+
+    setIsSaving(true);
+
+    try {
+      const userId = await getAuthenticatedUserId();
+
+      // Só um cronômetro por vez: finaliza o anterior antes, pra restrição do banco nunca aparecer pro usuário.
+      if (runningEntry) {
+        const finalizado = await finalizarNoServidor();
+        setRunningEntry(null);
+        if (finalizado) {
+          aplicarSegundos(finalizado.taskId, finalizado.segundos);
+          toast.info(`Cronômetro anterior finalizado: ${formatDuration(finalizado.segundos)}`);
+        }
+      }
+
+      // `started_at` é omitido de propósito — o default `now()` da coluna usa o relógio do servidor.
+      const { data, error } = await supabase
+        .from("task_time_entries")
+        .insert({ user_id: userId, task_id: taskId })
+        .select(SELECT_COLUMNS)
+        .single();
+
+      if (error) throw error;
+      setRunningEntry(data as TaskTimeEntryRecord);
+      // Cronômetro novo nasce com zero decorrido, então os totais estão exatos agora.
+      setTotaisAtualizadosEm(Date.now());
+      return true;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        toast.error("Já existe um cronômetro rodando", { description: "Atualizamos a tela com o estado mais recente." });
+        void fetchTimer();
+      } else {
+        toast.error("Não foi possível iniciar o cronômetro", {
+          description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        });
+      }
+      console.error("Erro ao iniciar cronômetro:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  /** Apaga o cronômetro ativo sem registrar tempo — a saída pro "deixei rodando o fim de semana". */
+  async function discardTimer() {
+    if (!runningEntry) return true;
+
+    setIsSaving(true);
+
+    try {
+      const userId = await getAuthenticatedUserId();
+      const { error } = await supabase
+        .from("task_time_entries")
+        .delete()
+        .eq("id", runningEntry.id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      setRunningEntry(null);
+      toast.success("Cronômetro descartado");
+      return true;
+    } catch (error) {
+      toast.error("Não foi possível descartar o cronômetro", {
+        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+      });
+      console.error("Erro ao descartar cronômetro:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return {
+    runningEntry,
+    runningTaskId: runningEntry?.task_id ?? null,
+    runningStartedAt: runningEntry?.started_at ?? null,
+    /** Segundos já gravados por tarefa; o cronômetro em curso não entra até ser finalizado. */
+    secondsByTaskId,
+    totais,
+    totaisAtualizadosEm,
+    isLoading,
+    isSaving,
+    startTimer,
+    stopTimer,
+    discardTimer,
+    refreshTimer: fetchTimer,
+    secondsSince,
+  };
+}

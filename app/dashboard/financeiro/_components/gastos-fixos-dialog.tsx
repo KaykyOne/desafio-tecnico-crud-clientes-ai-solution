@@ -14,6 +14,9 @@ import { Switch } from "@/components/ui/switch";
 //* Types Imports
 import type { GastoFixoInput, GastoFixoRecord } from "@/hooks/use-gastos-fixos";
 
+//* Utils Imports
+import { formatCurrency } from "@/lib/format-currency";
+
 type GastosFixosDialogProps = {
   open: boolean;
   gastosFixos: GastoFixoRecord[];
@@ -27,10 +30,6 @@ type GastosFixosDialogProps = {
 };
 
 const emptyForm: GastoFixoInput = { descricao: "", valor: 0, dia_cobranca: 1, data_inicio: new Date().toISOString().slice(0, 10), data_fim: null };
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
 
 export default function GastosFixosDialog({ open, gastosFixos, isSaving, deletingId, onOpenChange, onCreate, onUpdate, onToggleAtivo, onDelete }: GastosFixosDialogProps) {
   const [editingId, setEditingId] = useState<string | null>(null);

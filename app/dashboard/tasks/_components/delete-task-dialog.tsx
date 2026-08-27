@@ -11,9 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+//* Utils Imports
+import { formatDuration } from "@/lib/format-duration";
+
 type DeleteTaskDialogProps = {
   open: boolean;
   taskTitle: string;
+  loggedSeconds?: number;
   isDeleting: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => Promise<boolean>;
@@ -22,6 +26,7 @@ type DeleteTaskDialogProps = {
 export default function DeleteTaskDialog({
   open,
   taskTitle,
+  loggedSeconds = 0,
   isDeleting,
   onOpenChange,
   onConfirm,
@@ -37,6 +42,13 @@ export default function DeleteTaskDialog({
           <DialogDescription>
             Essa ação removerá <strong>{taskTitle}</strong> e não pode ser desfeita.
           </DialogDescription>
+          {/* O tempo registrado some junto (FK em cascade) e sai dos totais do dia/semana/mês. */}
+          {loggedSeconds > 0 && (
+            <DialogDescription className="text-destructive">
+              Essa tarefa tem <strong>{formatDuration(loggedSeconds)}</strong> de tempo registrado, que também será
+              excluído dos seus totais.
+            </DialogDescription>
+          )}
         </DialogHeader>
         <DialogFooter className="mt-4 border-t-0 bg-transparent p-0">
           <Button type="button" variant="outline" disabled={isDeleting} onClick={() => onOpenChange(false)}>

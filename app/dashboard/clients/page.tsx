@@ -9,14 +9,11 @@ import { Input } from "@/components/ui/input";
 import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Table from "@/components/ui/table";
 import { useClients, type ClientRecord, type ClientStatus } from "@/hooks/use-clients";
+import { formatTimestamp } from "@/lib/format-date";
 
 import ClientFormDialog from "./_components/client-form-dialog";
 import ClientsSkeleton from "./_components/clients-skeleton";
 import DeleteClientDialog from "./_components/delete-client-dialog";
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
-}
 
 function isActive(status: string) {
   return status.toLowerCase() !== "inativo" && status.toLowerCase() !== "inactive";
@@ -166,7 +163,7 @@ export default function ClientsPage() {
                           <Badge variant={active ? "secondary" : "outline"}>{active ? "Ativo" : "Inativo"}</Badge>
                         </Table.TableCell>
                         <Table.TableCell className="px-3 py-4 text-muted-foreground">
-                          {formatDate(client.created_at)}
+                          {formatTimestamp(client.created_at)}
                         </Table.TableCell>
                         <Table.TableCell className="px-3 py-4 text-right">
                           <div className="flex justify-end gap-1">

@@ -13,6 +13,7 @@ import type { FinanceiroRecord } from "@/hooks/use-financeiro";
 import type { FinanceiroGrupoRecord } from "@/hooks/use-financeiro-grupos";
 
 //* Utils Imports
+import { formatCurrency } from "@/lib/format-currency";
 import { normalizeText } from "@/lib/normalize-text";
 
 import FinanceiroGrupoDialog from "./financeiro-grupo-dialog";
@@ -26,10 +27,6 @@ type FinanceiroGruposProps = {
   onUpdate: (id: string, termos: string[], nome: string) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 };
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
 
 /** Lançamentos cuja descrição contém QUALQUER um dos termos, sem diferenciar maiúsculas/minúsculas nem acentos. */
 export function matchGrupoRecords(records: FinanceiroRecord[], termos: string[]) {
