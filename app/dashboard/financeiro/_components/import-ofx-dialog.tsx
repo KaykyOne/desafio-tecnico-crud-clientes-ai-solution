@@ -20,6 +20,8 @@ import type { FinanceiroInput } from "@/hooks/use-financeiro";
 import { parseOfxFile, type OfxGroup } from "@/lib/ofx";
 
 //* Utils Imports
+import { formatCurrency } from "@/lib/format-currency";
+import { formatDate } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
 
 type ReviewState = { include: boolean; tipo: "gasto" | "ganho"; cliente_id: string | null };
@@ -38,14 +40,6 @@ const toneStyles = {
   ganho: { border: "border-l-emerald-400", text: "text-emerald-700", sign: "+" },
   gasto: { border: "border-l-rose-400", text: "text-rose-700", sign: "-" },
 };
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${date}T00:00:00`));
-}
 
 function sumIncluded(groups: OfxGroup[], review: Record<string, ReviewState>) {
   return groups.reduce((sum, group) => (review[group.key]?.include ? sum + group.valor * group.transactions.length : sum), 0);

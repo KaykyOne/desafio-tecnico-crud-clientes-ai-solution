@@ -15,6 +15,8 @@ import type { FinanceiroRecord } from "@/hooks/use-financeiro";
 import type { FinanceiroGrupoRecord } from "@/hooks/use-financeiro-grupos";
 
 //* Utils Imports
+import { formatCurrency } from "@/lib/format-currency";
+import { formatDate } from "@/lib/format-date";
 import { normalizeText } from "@/lib/normalize-text";
 
 import { matchGrupoRecords, sumGrupoRecords } from "./financeiro-grupos";
@@ -27,14 +29,6 @@ type FinanceiroGrupoDialogProps = {
   onUpdate: (id: string, termos: string[], nome: string) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 };
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${date}T00:00:00`));
-}
 
 export default function FinanceiroGrupoDialog({ grupo, records, isSaving, onOpenChange, onUpdate, onDelete }: FinanceiroGrupoDialogProps) {
   const [termos, setTermos] = useState<string[]>(grupo.termos);

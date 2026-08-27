@@ -1,6 +1,7 @@
 import type { BancoRecord } from "@/hooks/use-bancos";
 import type { ClientRecord } from "@/hooks/use-clients";
 import type { FinanceiroRecord, FinanceiroTipo } from "@/hooks/use-financeiro";
+import { formatDate } from "@/lib/format-date";
 
 const BOM = "﻿";
 
@@ -8,10 +9,6 @@ const tipoLabels: Record<FinanceiroTipo, string> = { gasto: "Gasto", gasto_fixo:
 
 function csvEscape(value: string) {
   return /[";\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${date}T00:00:00`));
 }
 
 function formatValor(record: FinanceiroRecord) {

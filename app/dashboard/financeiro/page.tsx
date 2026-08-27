@@ -17,16 +17,21 @@ import { useBancos } from "@/hooks/use-bancos";
 import { useClients } from "@/hooks/use-clients";
 import { useFinanceiro, type FinanceiroRecord, type FinanceiroTipo } from "@/hooks/use-financeiro";
 import { useFinanceiroGrupos } from "@/hooks/use-financeiro-grupos";
+import { useFinanceiroSaldo } from "@/hooks/use-financeiro-saldo";
 import { useGastosFixos } from "@/hooks/use-gastos-fixos";
 
 //* Utils Imports
 import { exportFinanceiroToCsv } from "@/lib/financeiro-csv";
+import { formatCurrency } from "@/lib/format-currency";
+import { formatDate } from "@/lib/format-date";
 import { normalizeText } from "@/lib/normalize-text";
 
 import BancosDialog from "./_components/bancos-dialog";
 import DeleteFinanceiroDialog from "./_components/delete-financeiro-dialog";
 import FinanceiroFormDialog from "./_components/financeiro-form-dialog";
 import FinanceiroGrupos from "./_components/financeiro-grupos";
+import FinanceiroSaldoCard from "./_components/financeiro-saldo-card";
+import FinanceiroSaldoDialog from "./_components/financeiro-saldo-dialog";
 import FinanceiroSkeleton from "./_components/financeiro-skeleton";
 import GastosFixosDialog from "./_components/gastos-fixos-dialog";
 import ImportOfxDialog from "./_components/import-ofx-dialog";
@@ -38,14 +43,6 @@ const tipoStyles: Record<FinanceiroTipo, string> = {
   gasto_fixo: "border-amber-200 bg-amber-50 text-amber-800",
   ganho: "border-sky-200 bg-sky-50 text-sky-800",
 };
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${date}T00:00:00`));
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
 
 /** Extrai um número de algo como "50", "50 reais" ou "R$ 50,00". */
 function parseValorBusca(value: string) {
@@ -76,6 +73,8 @@ export default function FinanceiroPage() {
   const gastosFixosState = useGastosFixos();
   const gruposState = useFinanceiroGrupos();
   const bancosState = useBancos();
+  const { linhas: saldoLinhas, isLoading: isLoadingSaldo, refreshSaldo } = useFinanceiroSaldo();
+  const [isSaldoOpen, setIsSaldoOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGastosFixosOpen, setIsGastosFixosOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -131,9 +130,32 @@ export default function FinanceiroPage() {
     exportFinanceiroToCsv(toExport, clients, bancosState.bancos, `extrato-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
+  // O saldo acumulado vem de uma RPC própria, então toda escrita no extrato o deixa velho.
+  // O refresh não é aguardado de propósito: o toast da operação não deve esperar um segundo round trip.
+  async function handleCreateRecord(input: Parameters<typeof createRecord>[0]) {
+    const success = await createRecord(input);
+    if (success) void refreshSaldo();
+    return success;
+  }
+
+  async function handleImportRecords(inputs: Parameters<typeof importRecords>[0]) {
+    const result = await importRecords(inputs);
+    if (result.inserted > 0) void refreshSaldo();
+    return result;
+  }
+
+  async function handleDeleteRecord(id: string) {
+    const success = await deleteRecord(id);
+    if (success) void refreshSaldo();
+    return success;
+  }
+
   async function handleBulkDelete() {
     const success = await deleteRecords([...selectedIds]);
-    if (success) setSelectedIds(new Set());
+    if (success) {
+      setSelectedIds(new Set());
+      void refreshSaldo();
+    }
     return success;
   }
 
@@ -153,9 +175,10 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border bg-muted p-5">
-          <p className="text-xs font-semibold text-foreground opacity-75">Saldo do período filtrado</p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FinanceiroSaldoCard linhas={saldoLinhas} isLoading={isLoadingSaldo} onOpen={() => setIsSaldoOpen(true)} />
+        <div className="rounded-2xl border bg-background p-5">
+          <p className="text-xs font-semibold text-muted-foreground">Saldo do período filtrado</p>
           <p className={`mt-4 text-3xl font-black tracking-[-0.06em] ${total < 0 ? "text-rose-700" : "text-foreground"}`}>{formatCurrency(total)}</p>
         </div>
         <div className="flex flex-col justify-center gap-2 rounded-2xl border bg-background p-5">
@@ -273,8 +296,15 @@ export default function FinanceiroPage() {
         </div>
       )}
 
-      <FinanceiroFormDialog open={isFormOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsFormOpen} onSubmit={createRecord} />
-      <ImportOfxDialog open={isImportOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsImportOpen} onFindDuplicates={findDuplicates} onImport={importRecords} />
+      {isSaldoOpen && (
+        <FinanceiroSaldoDialog
+          linhas={saldoLinhas}
+          bancos={bancosState.bancos}
+          onOpenChange={(open) => { if (!open) setIsSaldoOpen(false); }}
+        />
+      )}
+      <FinanceiroFormDialog open={isFormOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsFormOpen} onSubmit={handleCreateRecord} />
+      <ImportOfxDialog open={isImportOpen} clients={clients} bancos={bancosState.bancos} isSaving={isSaving} onOpenChange={setIsImportOpen} onFindDuplicates={findDuplicates} onImport={handleImportRecords} />
       <BancosDialog
         open={isBancosOpen}
         bancos={bancosState.bancos}
@@ -300,7 +330,7 @@ export default function FinanceiroPage() {
         descricao={deletingRecord?.descricao ?? "esse lançamento"}
         isDeleting={Boolean(deletingId)}
         onOpenChange={(open) => { if (!open) setDeletingRecord(null); }}
-        onConfirm={() => (deletingRecord ? deleteRecord(deletingRecord.id) : Promise.resolve(false))}
+        onConfirm={() => (deletingRecord ? handleDeleteRecord(deletingRecord.id) : Promise.resolve(false))}
       />
       <DeleteFinanceiroDialog
         open={isBulkDeleteOpen}

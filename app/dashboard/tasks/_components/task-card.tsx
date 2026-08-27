@@ -2,7 +2,7 @@
 
 //* Libraries Imports
 import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
-import { CalendarDays, Clock3, Pencil, Trash2, User } from "lucide-react";
+import { ArrowRightLeft, CalendarDays, Clock3, Pencil, Play, Square, Timer, Trash2, User } from "lucide-react";
 
 //* Components Imports
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,21 @@ import { Button } from "@/components/ui/button";
 import type { TaskPriority, TaskRecord } from "@/hooks/use-tasks";
 
 //* Utils Imports
+import { formatDateLong } from "@/lib/format-date";
+import { formatDuration } from "@/lib/format-duration";
 import { cn } from "@/lib/utils";
+
+import TaskTimerDisplay from "./task-timer-display";
+
+/** Agrupado num prop só porque atravessa 4 níveis até chegar no card. */
+export type TaskTimerProps = {
+  runningTaskId: string | null;
+  runningStartedAt: string | null;
+  secondsByTaskId: Record<string, number>;
+  isSaving: boolean;
+  onStart: (taskId: string) => void;
+  onStop: () => void;
+};
 
 type TaskCardProps = {
   task: TaskRecord;
@@ -20,6 +34,7 @@ type TaskCardProps = {
   isDragging?: boolean;
   draggableAttributes?: DraggableAttributes;
   draggableListeners?: DraggableSyntheticListeners;
+  timer?: TaskTimerProps;
   onEdit?: (task: TaskRecord) => void;
   onDelete?: (task: TaskRecord) => void;
   onQuickEdit?: (task: TaskRecord) => void;
@@ -51,9 +66,10 @@ const priorityDividerStyles: Record<TaskPriority, string> = {
   high: "border-white/25",
 };
 
-function formatDueDate(date: string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${date}T00:00:00`));
-}
+// Executando: o card assume o azul e ignora a cor da prioridade, pra dar pra ver de longe o que
+// está rodando. Como o azul é fundo escuro com texto branco, os detalhes reaproveitam as
+// variantes da prioridade "low", que já são feitas pra esse contraste.
+const runningCardStyle = "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white";
 
 export default function TaskCard({
   task,
@@ -61,18 +77,27 @@ export default function TaskCard({
   isDragging,
   draggableAttributes,
   draggableListeners,
+  timer,
   onEdit,
   onDelete,
   onQuickEdit,
 }: TaskCardProps) {
+  const isRunning = timer?.runningTaskId === task.id;
+  const loggedSeconds = timer?.secondsByTaskId[task.id] ?? 0;
+  // Enquanto executa, os detalhes seguem a paleta clara-sobre-escuro da prioridade "low".
+  const detailPriority: TaskPriority = isRunning ? "low" : task.priority;
+
   return (
     <article
       {...draggableAttributes}
       {...draggableListeners}
       className={cn(
         "group rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring",
-        priorityCardStyles[task.priority],
-        draggableListeners && "cursor-grab touch-none active:cursor-grabbing",
+        isRunning ? runningCardStyle : priorityCardStyles[task.priority],
+        // Sem `touch-none`: os listeners cobrem o card inteiro, então ele diria ao navegador
+        // "nunca role a partir daqui" e a página travaria no celular. Com o TouchSensor por
+        // atraso, o navegador precisa mesmo ser dono do gesto até a ativação.
+        draggableListeners && "cursor-grab touch-manipulation active:cursor-grabbing",
         isDragging && "opacity-40",
       )}
     >
@@ -90,7 +115,7 @@ export default function TaskCard({
             : {})}
           className={cn(
             "shrink-0",
-            priorityBadgeStyles[task.priority],
+            priorityBadgeStyles[detailPriority],
             onQuickEdit && "cursor-pointer hover:brightness-110",
           )}
         >
@@ -99,7 +124,7 @@ export default function TaskCard({
       </div>
 
       {task.description && (
-        <p className={cn("mt-2 line-clamp-2 text-sm leading-relaxed", priorityMutedTextStyles[task.priority])}>
+        <p className={cn("mt-2 line-clamp-2 text-sm leading-relaxed", priorityMutedTextStyles[detailPriority])}>
           {task.description}
         </p>
       )}
@@ -107,17 +132,30 @@ export default function TaskCard({
       <div
         className={cn(
           "mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs",
-          priorityMutedTextStyles[task.priority],
+          priorityMutedTextStyles[detailPriority],
         )}
       >
         <span className="inline-flex items-center gap-1.5">
           <CalendarDays className="size-3.5" />
-          Entrega: {formatDueDate(task.due_date)}
+          Entrega: {formatDateLong(task.due_date)}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Clock3 className="size-3.5" />
-          {task.average_duration_minutes} min
+          Est.: {task.average_duration_minutes} min
         </span>
+        {isRunning && timer?.runningStartedAt ? (
+          <span className="inline-flex items-center gap-1.5 font-bold">
+            <span className="size-1.5 animate-pulse rounded-full bg-current" />
+            <TaskTimerDisplay key={timer.runningStartedAt} startedAt={timer.runningStartedAt} />
+          </span>
+        ) : (
+          loggedSeconds > 0 && (
+            <span className="inline-flex items-center gap-1.5 font-semibold">
+              <Timer className="size-3.5" />
+              Real: {formatDuration(loggedSeconds)}
+            </span>
+          )
+        )}
         {clientName && (
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <User className="size-3.5 shrink-0" />
@@ -126,19 +164,60 @@ export default function TaskCard({
         )}
       </div>
 
-      {(onEdit || onDelete) && (
+      {(onEdit || onDelete || onQuickEdit || timer) && (
         <div
           className={cn(
-            "mt-3 flex justify-end border-t pt-2 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
-            priorityDividerStyles[task.priority],
+            "mt-3 flex items-center justify-end gap-1 border-t pt-2 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100",
+            priorityDividerStyles[detailPriority],
+            // Com um cronômetro rodando a linha precisa ficar visível sem hover —
+            // senão, no desktop, não há como pará-lo.
+            isRunning && "sm:opacity-100",
+            timer && "justify-between",
           )}
         >
+          {timer && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={timer.isSaving}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isRunning) timer.onStop();
+                else timer.onStart(task.id);
+              }}
+              aria-label={isRunning ? `Finalizar execução de ${task.title}` : `Iniciar execução de ${task.title}`}
+            >
+              {isRunning ? <Square /> : <Play />}
+            </Button>
+          )}
+
+          <div className="flex items-center">
+          {/* Os botões vivem dentro do elemento que carrega os listeners de arrasto, então o
+              stopPropagation é explícito — sem ele o clique compete com a ativação do sensor. */}
+          {onQuickEdit && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={(event) => {
+                event.stopPropagation();
+                onQuickEdit(task);
+              }}
+              aria-label={`Mover ${task.title} ou alterar prioridade`}
+            >
+              <ArrowRightLeft />
+            </Button>
+          )}
           {onEdit && (
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
-              onClick={() => onEdit(task)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit(task);
+              }}
               aria-label={`Editar ${task.title}`}
             >
               <Pencil />
@@ -149,12 +228,16 @@ export default function TaskCard({
               type="button"
               variant="ghost"
               size="icon-sm"
-              onClick={() => onDelete(task)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(task);
+              }}
               aria-label={`Excluir ${task.title}`}
             >
               <Trash2 />
             </Button>
           )}
+          </div>
         </div>
       )}
     </article>

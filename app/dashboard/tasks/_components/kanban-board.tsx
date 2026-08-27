@@ -15,13 +15,14 @@ import type { TaskRecord } from "@/hooks/use-tasks";
 //* Utils Imports
 import { cn } from "@/lib/utils";
 
-import TaskCard from "./task-card";
+import TaskCard, { type TaskTimerProps } from "./task-card";
 import TaskCardSkeleton from "./task-card-skeleton";
 
 type KanbanBoardProps = {
   tasks: TaskRecord[];
   columns: TaskColumnRecord[];
   clientNameById: Record<string, string>;
+  timer: TaskTimerProps;
   isLoading: boolean;
   onEdit: (task: TaskRecord) => void;
   onDelete: (task: TaskRecord) => void;
@@ -31,6 +32,7 @@ type KanbanBoardProps = {
 function DraggableTaskCard({
   task,
   clientName,
+  timer,
   onEdit,
   onDelete,
   onQuickEdit,
@@ -49,6 +51,7 @@ function DraggableTaskCard({
       <TaskCard
         task={task}
         clientName={clientName}
+        timer={timer}
         isDragging={isDragging}
         draggableAttributes={attributes}
         draggableListeners={listeners}
@@ -64,6 +67,7 @@ function KanbanColumn({
   column,
   tasks,
   clientNameById,
+  timer,
   isLoading,
   onEdit,
   onDelete,
@@ -83,6 +87,9 @@ function KanbanColumn({
       ref={setNodeRef}
       style={{ ...style, borderLeftColor: column.color ?? "var(--foreground)" }}
       className={cn(
+        // No mobile cada coluna é um "slide" de 85vw (a próxima espia na borda, sinalizando que rola de lado);
+        // a partir de md volta a ser célula do grid.
+        "w-[min(85vw,20rem)] shrink-0 snap-start md:w-auto md:shrink",
         "flex min-h-[24rem] flex-col rounded-2xl border border-l-4 bg-muted/45 p-3 transition-[transform,background-color,border-color] sm:p-4",
         isOver && "border-foreground/35 bg-muted",
         isDragging && "z-10 opacity-60 shadow-xl",
@@ -127,6 +134,7 @@ function KanbanColumn({
               key={task.id}
               task={task}
               clientName={task.cliente_id ? clientNameById[task.cliente_id] : undefined}
+              timer={timer}
               onEdit={onEdit}
               onDelete={onDelete}
               onQuickEdit={onQuickEdit}
@@ -146,6 +154,7 @@ export default function KanbanBoard({
   tasks,
   columns,
   clientNameById,
+  timer,
   isLoading,
   onEdit,
   onDelete,
@@ -153,13 +162,15 @@ export default function KanbanBoard({
 }: KanbanBoardProps) {
   return (
     <SortableContext items={columns.map((column) => column.id)} strategy={rectSortingStrategy}>
-      <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))]">
+      {/* Mobile: carrossel horizontal com snap. md+: o grid original, inalterado. */}
+      <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 md:grid md:snap-none md:overflow-visible md:pb-0 md:[grid-template-columns:repeat(auto-fit,minmax(18rem,1fr))]">
         {columns.map((column) => (
           <KanbanColumn
             key={column.id}
             column={column}
             tasks={tasks.filter((task) => task.column_id === column.id)}
             clientNameById={clientNameById}
+            timer={timer}
             isLoading={isLoading}
             onEdit={onEdit}
             onDelete={onDelete}
