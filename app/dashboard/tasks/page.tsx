@@ -31,6 +31,7 @@ import DeleteTaskDialog from "./_components/delete-task-dialog";
 import KanbanBoard from "./_components/kanban-board";
 import ManageColumnsDialog from "./_components/manage-columns-dialog";
 import TaskCard from "./_components/task-card";
+import TaskFilters, { EMPTY_TASK_FILTERS, filterTasks, type TaskFilterValue } from "./_components/task-filters";
 import TaskFormDialog from "./_components/task-form-dialog";
 import TaskQuickEditSheet from "./_components/task-quick-edit-sheet";
 import TaskTimeSummary from "./_components/task-time-summary";
@@ -75,6 +76,7 @@ export default function TasksPage() {
   const [deletingTask, setDeletingTask] = useState<TaskRecord | null>(null);
   const [activeTask, setActiveTask] = useState<TaskRecord | null>(null);
   const [quickEditTaskId, setQuickEditTaskId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<TaskFilterValue>(EMPTY_TASK_FILTERS);
   const [isManagingColumns, setIsManagingColumns] = useState(false);
   // Mouse e toque separados de propósito: um PointerSensor único atenderia os dois pelo mesmo
   // caminho, e o `delay` que o toque precisa viraria uma espera de 220ms antes de todo arrasto no
@@ -120,6 +122,9 @@ export default function TasksPage() {
     {},
   );
   const isLoading = isLoadingTasks || isLoadingColumns;
+  // Só o quadro é filtrado. `taskCountByColumnId` acima segue sobre TODAS as tarefas de propósito:
+  // ele decide se uma coluna pode ser excluída, e um filtro ativo não pode mentir sobre isso.
+  const visibleTasks = filterTasks(tasks, filters);
   const clientNameById = Object.fromEntries(clients.map((client) => [client.id, client.name]));
   const timerProps = {
     runningTaskId,
@@ -141,8 +146,8 @@ export default function TasksPage() {
   const quickEditTask = tasks.find((task) => task.id === quickEditTaskId) ?? null;
 
   return (
-    <section className="space-y-8">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <section className="flex flex-col gap-8 md:h-[87vh] md:min-h-0 md:overflow-hidden">
+      <div className="flex shrink-0 flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">Organização</p>
           <h1 className="text-3xl font-bold tracking-[-0.05em] text-foreground">Tarefas</h1>
@@ -173,83 +178,86 @@ export default function TasksPage() {
           </Button>
         </div>
       </div>
-      <TaskTimeSummary
-        totais={totais}
-        totaisAtualizadosEm={totaisAtualizadosEm}
-        isRunning={runningTaskId !== null}
-        isLoading={isLoadingTimer}
-      />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <KanbanBoard
-          tasks={tasks}
-          columns={columns}
-          clientNameById={clientNameById}
-          timer={timerProps}
-          isLoading={isLoading}
-          onEdit={openEditDialog}
-          onDelete={setDeletingTask}
-          onQuickEdit={(task) => setQuickEditTaskId(task.id)}
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <TaskTimeSummary
+          totais={totais}
+          totaisAtualizadosEm={totaisAtualizadosEm}
+          isRunning={runningTaskId !== null}
+          isLoading={isLoadingTimer}
         />
-        <DragOverlay>
-          {activeTask ? (
-            <div className="w-[min(22rem,calc(100vw-2rem))] rotate-1 shadow-xl">
-              <TaskCard
-                task={activeTask}
-                clientName={activeTask.cliente_id ? clientNameById[activeTask.cliente_id] : undefined}
-              />
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-      {quickEditTask && (
-        <TaskQuickEditSheet
-          task={quickEditTask}
+        <TaskFilters value={filters} clients={clients} onChange={setFilters} />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <KanbanBoard
+            tasks={visibleTasks}
+            columns={columns}
+            clientNameById={clientNameById}
+            timer={timerProps}
+            isLoading={isLoading}
+            onEdit={openEditDialog}
+            onDelete={setDeletingTask}
+            onQuickEdit={(task) => setQuickEditTaskId(task.id)}
+          />
+          <DragOverlay>
+            {activeTask ? (
+              <div className="w-[min(22rem,calc(100vw-2rem))] rotate-1 shadow-xl">
+                <TaskCard
+                  task={activeTask}
+                  clientName={activeTask.cliente_id ? clientNameById[activeTask.cliente_id] : undefined}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+        {quickEditTask && (
+          <TaskQuickEditSheet
+            task={quickEditTask}
+            clients={clients}
+            columns={columns}
+            timer={{ ...timerProps, onDiscard: () => void discardTimer() }}
+            onOpenChange={(open) => {
+              if (!open) setQuickEditTaskId(null);
+            }}
+            onPatch={quickUpdateTask}
+            onMoveToColumn={updateTaskColumn}
+          />
+        )}
+        <TaskFormDialog
+          key={`${editingTask?.id ?? "new"}-${isFormOpen}`}
+          open={isFormOpen}
+          task={editingTask}
+          columns={columns}
           clients={clients}
-          columns={columns}
-          timer={{ ...timerProps, onDiscard: () => void discardTimer() }}
-          onOpenChange={(open) => {
-            if (!open) setQuickEditTaskId(null);
-          }}
-          onPatch={quickUpdateTask}
-          onMoveToColumn={updateTaskColumn}
+          isSaving={isSaving}
+          onOpenChange={setIsFormOpen}
+          onSubmit={(input) => (editingTask ? updateTask(editingTask.id, input) : createTask(input))}
         />
-      )}
-      <TaskFormDialog
-        key={`${editingTask?.id ?? "new"}-${isFormOpen}`}
-        open={isFormOpen}
-        task={editingTask}
-        columns={columns}
-        clients={clients}
-        isSaving={isSaving}
-        onOpenChange={setIsFormOpen}
-        onSubmit={(input) => (editingTask ? updateTask(editingTask.id, input) : createTask(input))}
-      />
-      <ManageColumnsDialog
-        open={isManagingColumns}
-        columns={columns}
-        taskCountByColumnId={taskCountByColumnId}
-        isSaving={isSavingColumns}
-        onOpenChange={setIsManagingColumns}
-        onCreate={createColumn}
-        onRename={renameColumn}
-        onDelete={deleteColumn}
-        onReorder={reorderColumns}
-      />
-      <DeleteTaskDialog
-        open={Boolean(deletingTask)}
-        taskTitle={deletingTask?.title ?? ""}
-        loggedSeconds={deletingTask ? (secondsByTaskId[deletingTask.id] ?? 0) : 0}
-        isDeleting={Boolean(deletingTaskId)}
-        onOpenChange={(open) => {
-          if (!open) setDeletingTask(null);
-        }}
-        onConfirm={() => (deletingTask ? handleDeleteTask(deletingTask.id) : Promise.resolve(false))}
-      />
-    </section>
+        <ManageColumnsDialog
+          open={isManagingColumns}
+          columns={columns}
+          taskCountByColumnId={taskCountByColumnId}
+          isSaving={isSavingColumns}
+          onOpenChange={setIsManagingColumns}
+          onCreate={createColumn}
+          onRename={renameColumn}
+          onDelete={deleteColumn}
+          onReorder={reorderColumns}
+        />
+        <DeleteTaskDialog
+          open={Boolean(deletingTask)}
+          taskTitle={deletingTask?.title ?? ""}
+          loggedSeconds={deletingTask ? (secondsByTaskId[deletingTask.id] ?? 0) : 0}
+          isDeleting={Boolean(deletingTaskId)}
+          onOpenChange={(open) => {
+            if (!open) setDeletingTask(null);
+          }}
+          onConfirm={() => (deletingTask ? handleDeleteTask(deletingTask.id) : Promise.resolve(false))}
+        />
+      </div>
+    </section >
   );
 }
