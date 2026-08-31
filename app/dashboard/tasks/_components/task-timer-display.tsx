@@ -24,7 +24,7 @@ type TaskTimerDisplayProps = {
  * Use sempre com `key={startedAt}`: assim um cronômetro novo remonta o componente e o estado
  * inicial já nasce correto, sem precisar sincronizar via efeito.
  */
-export default function TaskTimerDisplay({ startedAt, className }: TaskTimerDisplayProps) {
+export function TaskTimerDisplay({ startedAt, className }: TaskTimerDisplayProps) {
   const [seconds, setSeconds] = useState(() => secondsSince(startedAt));
 
   useEffect(() => {

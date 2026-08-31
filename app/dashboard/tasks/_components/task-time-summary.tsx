@@ -1,10 +1,10 @@
 "use client";
 
+//* Components Imports
+import Skeleton from "@/components/ui/skeleton";
+
 //* Libraries Imports
 import { useEffect, useState } from "react";
-
-//* Components Imports
-import { Skeleton } from "@/components/ui/skeleton";
 
 //* Types Imports
 import type { TaskTimeTotais } from "@/hooks/use-task-timer";
@@ -27,7 +27,7 @@ type TaskTimeSummaryProps = {
  * cards re-renderizem por segundo — não o quadro inteiro, que estaria brigando com o dnd-kit no
  * meio de um arrasto.
  */
-export default function TaskTimeSummary({ totais, totaisAtualizadosEm, isRunning, isLoading }: TaskTimeSummaryProps) {
+export function TaskTimeSummary({ totais, totaisAtualizadosEm, isRunning, isLoading }: TaskTimeSummaryProps) {
   // O baseline anda junto do valor pra que, quando ele muda (cronômetro novo, ou totais relidos do
   // servidor), a sobra do ciclo anterior não apareça no intervalo entre o render e o primeiro tick.
   const [tick, setTick] = useState({ baseline: totaisAtualizadosEm, segundos: 0 });

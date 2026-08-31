@@ -1,5 +1,19 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+
+import {
+  DeleteTaskDialog,
+  KanbanBoard,
+  ManageColumnsDialog,
+  TaskCard,
+  TaskFilters,
+  TaskFormDialog,
+  TaskQuickEditSheet,
+  TaskTimeSummary,
+} from "./_components";
+
 //* Libraries Imports
 import {
   DndContext,
@@ -10,31 +24,24 @@ import {
   closestCorners,
   useSensor,
   useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 
-//* Components Imports
-import { Button } from "@/components/ui/button";
-
 //* Hooks Imports
 import { useClients } from "@/hooks/use-clients";
 import { useTaskColumns } from "@/hooks/use-task-columns";
 import { useTaskTimer } from "@/hooks/use-task-timer";
-import { useTasks, type TaskRecord } from "@/hooks/use-tasks";
+import { useTasks } from "@/hooks/use-tasks";
 
-//* Components Imports
-import DeleteTaskDialog from "./_components/delete-task-dialog";
-import KanbanBoard from "./_components/kanban-board";
-import ManageColumnsDialog from "./_components/manage-columns-dialog";
-import TaskCard from "./_components/task-card";
-import TaskFilters, { EMPTY_TASK_FILTERS, filterTasks, type TaskFilterValue } from "./_components/task-filters";
-import TaskFormDialog from "./_components/task-form-dialog";
-import TaskQuickEditSheet from "./_components/task-quick-edit-sheet";
-import TaskTimeSummary from "./_components/task-time-summary";
+//* Types Imports
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import type { TaskRecord } from "@/hooks/use-tasks";
+import type { TaskFilterValue } from "@/lib/task-filters";
+
+//* Utils Imports
+import { EMPTY_TASK_FILTERS, filterTasks } from "@/lib/task-filters";
 
 export default function TasksPage() {
   const {
@@ -258,6 +265,6 @@ export default function TasksPage() {
           onConfirm={() => (deletingTask ? handleDeleteTask(deletingTask.id) : Promise.resolve(false))}
         />
       </div>
-    </section >
+    </section>
   );
 }

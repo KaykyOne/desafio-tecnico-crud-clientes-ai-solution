@@ -1,15 +1,21 @@
 "use client";
 
+//* Components Imports
+import Avatar from "@/components/ui/avatar";
+import Button from "@/components/ui/button";
+
+import { ThemeToggle } from "./theme-toggle";
+
+//* Libraries Imports
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, KanbanSquare, LayoutDashboard, LogOut, Settings, UsersRound, Wallet } from "lucide-react";
 
-import { AvatarFallback, AvatarRoot } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+//* Hooks Imports
 import { useLogout } from "@/hooks/use-logout";
-import { cn } from "@/lib/utils";
 
-import ThemeToggle from "./theme-toggle";
+//* Utils Imports
+import { cn } from "@/lib/utils";
 
 const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
@@ -20,7 +26,7 @@ const navigation = [
   { href: "/dashboard/settings", label: "Configurações", icon: Settings },
 ];
 
-export default function DashboardSidebar() {
+export function DashboardSidebar() {
   const pathname = usePathname();
   const { logout, isLoading } = useLogout();
 
@@ -66,9 +72,9 @@ export default function DashboardSidebar() {
         <ThemeToggle />
 
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
-          <AvatarRoot size="sm" className="bg-muted text-foreground ring-2 ring-background">
-            <AvatarFallback>iF</AvatarFallback>
-          </AvatarRoot>
+          <Avatar.AvatarRoot size="sm" className="bg-muted text-foreground ring-2 ring-background">
+            <Avatar.AvatarFallback>iF</Avatar.AvatarFallback>
+          </Avatar.AvatarRoot>
           <div className="min-w-0">
             <p className="truncate text-xs font-bold text-foreground">Minha conta</p>
             <p className="truncate text-[0.68rem] text-muted-foreground">izi Freelas</p>
@@ -89,7 +95,12 @@ export default function DashboardSidebar() {
 
         <p className="px-1 text-center text-[0.65rem] text-muted-foreground">
           por{" "}
-          <a href="https://kayky.dev.br/" target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-foreground hover:underline">
+          <a
+            href="https://kayky.dev.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold hover:text-foreground hover:underline"
+          >
             Kayky
           </a>
         </p>

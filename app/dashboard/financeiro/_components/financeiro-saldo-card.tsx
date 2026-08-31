@@ -1,7 +1,7 @@
 "use client";
 
 //* Components Imports
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton";
 
 //* Types Imports
 import type { BancoRecord } from "@/hooks/use-bancos";
@@ -50,7 +50,7 @@ export function agruparPorBanco(linhas: FinanceiroTotalLinha[], bancos: BancoRec
   return [...porBanco, { bancoId: null, nome: "Sem banco", ...resumirLinhas(semBancoLinhas) }];
 }
 
-export default function FinanceiroSaldoCard({ linhas, isLoading, onOpen }: FinanceiroSaldoCardProps) {
+export function FinanceiroSaldoCard({ linhas, isLoading, onOpen }: FinanceiroSaldoCardProps) {
   const { ganhos, saidas, saldo } = resumirLinhas(linhas);
 
   return (

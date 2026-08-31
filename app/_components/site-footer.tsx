@@ -1,4 +1,4 @@
-export default function SiteFooter() {
+export function SiteFooter() {
   return (
     <footer className="mx-auto w-full max-w-6xl py-6 text-center text-[0.72rem] text-muted-foreground">
       <p>

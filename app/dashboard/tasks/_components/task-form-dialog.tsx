@@ -1,22 +1,15 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+import Dialog from "@/components/ui/dialog";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+import Select from "@/components/ui/select";
+import Textarea from "@/components/ui/textarea";
+
 //* Libraries Imports
 import { useState, type FormEvent } from "react";
-
-//* Components Imports
-import { Button } from "@/components/ui/button";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 //* Types Imports
 import type { ClientRecord } from "@/hooks/use-clients";
@@ -45,7 +38,7 @@ function createEmptyForm(columnId: string): TaskInput {
   };
 }
 
-export default function TaskFormDialog({
+export function TaskFormDialog({
   open,
   task,
   columns,
@@ -80,16 +73,16 @@ export default function TaskFormDialog({
   }
 
   return (
-    <DialogRoot open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-background p-6 sm:max-w-lg sm:p-8">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-[-0.04em]">
+    <Dialog.DialogRoot open={open} onOpenChange={onOpenChange}>
+      <Dialog.DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-background p-6 sm:max-w-lg sm:p-8">
+        <Dialog.DialogHeader>
+          <Dialog.DialogTitle className="text-xl font-bold tracking-[-0.04em]">
             {isEditing ? "Editar tarefa" : "Nova tarefa"}
-          </DialogTitle>
-          <DialogDescription>
+          </Dialog.DialogTitle>
+          <Dialog.DialogDescription>
             {isEditing ? "Atualize os detalhes da tarefa." : "Planeje uma nova tarefa para o seu fluxo de trabalho."}
-          </DialogDescription>
-        </DialogHeader>
+          </Dialog.DialogDescription>
+        </Dialog.DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="task-title">Título</Label>
@@ -124,29 +117,29 @@ export default function TaskFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Coluna</Label>
-              <SelectRoot
+              <Select.SelectRoot
                 value={form.column_id}
                 onValueChange={(value) => {
                   if (value) setForm((current) => ({ ...current, column_id: value }));
                 }}
               >
-                <SelectTrigger className="h-11 w-full bg-background">
-                  <SelectValue>
+                <Select.SelectTrigger className="h-11 w-full bg-background">
+                  <Select.SelectValue>
                     {columns.find((column) => column.id === form.column_id)?.name ?? "Selecione uma coluna"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
+                  </Select.SelectValue>
+                </Select.SelectTrigger>
+                <Select.SelectContent>
                   {columns.map((column) => (
-                    <SelectItem key={column.id} value={column.id}>
+                    <Select.SelectItem key={column.id} value={column.id}>
                       {column.name}
-                    </SelectItem>
+                    </Select.SelectItem>
                   ))}
-                </SelectContent>
-              </SelectRoot>
+                </Select.SelectContent>
+              </Select.SelectRoot>
             </div>
             <div className="space-y-2">
               <Label>Prioridade</Label>
-              <SelectRoot
+              <Select.SelectRoot
                 value={form.priority}
                 onValueChange={(value) =>
                   setForm((current) => ({
@@ -155,22 +148,22 @@ export default function TaskFormDialog({
                   }))
                 }
               >
-                <SelectTrigger className="h-11 w-full bg-background">
-                  <SelectValue>
+                <Select.SelectTrigger className="h-11 w-full bg-background">
+                  <Select.SelectValue>
                     {form.priority === "low" ? "Baixa" : form.priority === "medium" ? "Média" : "Urgente"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Baixa</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="high">Urgente</SelectItem>
-                </SelectContent>
-              </SelectRoot>
+                  </Select.SelectValue>
+                </Select.SelectTrigger>
+                <Select.SelectContent>
+                  <Select.SelectItem value="low">Baixa</Select.SelectItem>
+                  <Select.SelectItem value="medium">Média</Select.SelectItem>
+                  <Select.SelectItem value="high">Urgente</Select.SelectItem>
+                </Select.SelectContent>
+              </Select.SelectRoot>
             </div>
           </div>
           <div className="space-y-2">
             <Label>Cliente (opcional)</Label>
-            <SelectRoot
+            <Select.SelectRoot
               value={form.cliente_id ?? "none"}
               onValueChange={(value) =>
                 setForm((current) => ({
@@ -179,18 +172,20 @@ export default function TaskFormDialog({
                 }))
               }
             >
-              <SelectTrigger className="h-11 w-full bg-background">
-                <SelectValue>{clients.find((client) => client.id === form.cliente_id)?.name ?? "Nenhum"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
+              <Select.SelectTrigger className="h-11 w-full bg-background">
+                <Select.SelectValue>
+                  {clients.find((client) => client.id === form.cliente_id)?.name ?? "Nenhum"}
+                </Select.SelectValue>
+              </Select.SelectTrigger>
+              <Select.SelectContent>
+                <Select.SelectItem value="none">Nenhum</Select.SelectItem>
                 {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
+                  <Select.SelectItem key={client.id} value={client.id}>
                     {client.name}
-                  </SelectItem>
+                  </Select.SelectItem>
                 ))}
-              </SelectContent>
-            </SelectRoot>
+              </Select.SelectContent>
+            </Select.SelectRoot>
           </div>
           <div className="space-y-2">
             <Label htmlFor="task-duration">Tempo estimado (minutos)</Label>
@@ -225,16 +220,16 @@ export default function TaskFormDialog({
               className="h-11"
             />
           </div>
-          <DialogFooter className="mt-6 border-t-0 bg-transparent p-0">
+          <Dialog.DialogFooter className="mt-6 border-t-0 bg-transparent p-0">
             <Button type="button" variant="outline" disabled={isSaving} onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isSaving || !form.column_id}>
               {isSaving ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar tarefa"}
             </Button>
-          </DialogFooter>
+          </Dialog.DialogFooter>
         </form>
-      </DialogContent>
-    </DialogRoot>
+      </Dialog.DialogContent>
+    </Dialog.DialogRoot>
   );
 }

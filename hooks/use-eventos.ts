@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { get, patch, post, remove } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
+
+//* Utils Imports
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export type EventoRecord = {
   id: string;
@@ -31,27 +35,8 @@ export type EventoInput = {
   cliente_id: string | null;
 };
 
-const SELECT_COLUMNS = "id, user_id, titulo, descricao, local, data_inicio, data_fim, dia_inteiro, cliente_id, created_at, updated_at";
-
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
+const SELECT_COLUMNS =
+  "id, user_id, titulo, descricao, local, data_inicio, data_fim, dia_inteiro, cliente_id, created_at, updated_at";
 
 export function useEventos() {
   const [eventos, setEventos] = useState<EventoRecord[]>([]);
@@ -64,17 +49,15 @@ export function useEventos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { data, error } = await supabase
-        .from("eventos")
-        .select(SELECT_COLUMNS)
-        .eq("user_id", userId)
-        .order("data_inicio", { ascending: true });
-
-      if (error) throw error;
-      setEventos((data ?? []) as EventoRecord[]);
+      const data = await get<EventoRecord>("eventos", {
+        select: SELECT_COLUMNS,
+        filters: { user_id: userId },
+        order: [{ column: "data_inicio", ascending: true }],
+      });
+      setEventos(data);
     } catch (error) {
       toast.error("Não foi possível carregar a agenda", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao listar eventos:", error);
     } finally {
@@ -93,20 +76,18 @@ export function useEventos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("eventos").insert({
+      await post("eventos", {
         ...input,
         descricao: input.descricao.trim() || null,
         local: input.local.trim() || null,
         user_id: userId,
       });
-
-      if (error) throw error;
       await fetchEventos();
       toast.success("Evento cadastrado");
       return true;
     } catch (error) {
       toast.error("Não foi possível cadastrar o evento", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao cadastrar evento:", error);
       return false;
@@ -120,19 +101,17 @@ export function useEventos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("eventos")
-        .update({ ...input, descricao: input.descricao.trim() || null, local: input.local.trim() || null })
-        .eq("id", id)
-        .eq("user_id", userId);
-
-      if (error) throw error;
+      await patch(
+        "eventos",
+        { ...input, descricao: input.descricao.trim() || null, local: input.local.trim() || null },
+        { id: id, user_id: userId },
+      );
       await fetchEventos();
       toast.success("Evento atualizado");
       return true;
     } catch (error) {
       toast.error("Não foi possível atualizar o evento", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao atualizar evento:", error);
       return false;
@@ -146,15 +125,13 @@ export function useEventos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("eventos").delete().eq("id", id).eq("user_id", userId);
-
-      if (error) throw error;
+      await remove("eventos", { id: id, user_id: userId });
       setEventos((current) => current.filter((evento) => evento.id !== id));
       toast.success("Evento excluído");
       return true;
     } catch (error) {
       toast.error("Não foi possível excluir o evento", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao excluir evento:", error);
       return false;

@@ -1,6 +1,9 @@
+//* Types Imports
 import type { BancoRecord } from "@/hooks/use-bancos";
 import type { ClientRecord } from "@/hooks/use-clients";
 import type { FinanceiroRecord, FinanceiroTipo } from "@/hooks/use-financeiro";
+
+//* Utils Imports
 import { formatDate } from "@/lib/format-date";
 
 const BOM = "﻿";
@@ -17,12 +20,24 @@ function formatValor(record: FinanceiroRecord) {
 }
 
 /** Exporta lançamentos como CSV separado por ";" (padrão do Excel em pt-BR), com BOM para acentos. */
-export function exportFinanceiroToCsv(records: FinanceiroRecord[], clients: ClientRecord[], bancos: BancoRecord[], filename = "extrato.csv") {
+export function exportFinanceiroToCsv(
+  records: FinanceiroRecord[],
+  clients: ClientRecord[],
+  bancos: BancoRecord[],
+  filename = "extrato.csv",
+) {
   const header = ["Data", "Tipo", "Descrição", "Cliente", "Banco", "Valor"];
   const rows = records.map((record) => {
     const client = clients.find((candidate) => candidate.id === record.cliente_id);
     const banco = bancos.find((candidate) => candidate.id === record.banco_id);
-    return [formatDate(record.data), tipoLabels[record.tipo], record.descricao ?? "", client?.name ?? "", banco?.nome ?? "", formatValor(record)];
+    return [
+      formatDate(record.data),
+      tipoLabels[record.tipo],
+      record.descricao ?? "",
+      client?.name ?? "",
+      banco?.nome ?? "",
+      formatValor(record),
+    ];
   });
 
   const csvContent = BOM + [header, ...rows].map((row) => row.map(csvEscape).join(";")).join("\r\n");

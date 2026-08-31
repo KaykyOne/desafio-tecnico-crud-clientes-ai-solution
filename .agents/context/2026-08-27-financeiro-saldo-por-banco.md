@@ -52,7 +52,7 @@ grant execute on function public.financeiro_totais_por_banco() to authenticated;
 - **RPC em vez de buscar tudo no cliente.** `useFinanceiro` não serve: ele busca com `.gte("data", start).lte("data", end)` e sua dep é `[periodFilter]`, então `allRecords` é estruturalmente incapaz de guardar histórico — e alargá-lo quebraria a página inteira, porque tabela, grupos, seleção e CSV são todos construídos em cima de "allRecords = a fatia do período". Uma segunda query sem limite também está errada: **o PostgREST corta a resposta em 1000 linhas por padrão**, então quem importa OFX todo mês bate nisso dentro de um ano e o saldo passa a mentir em silêncio — o pior modo de falha possível pra um número de dinheiro. A RPC agrupa no banco e devolve no máximo `(nº bancos + 1) × 3` linhas, pra sempre.
 - **`security invoker`, não `definer`.** A RLS de `financeiro` já restringe ao dono; invoker garante que a função não vaze linhas de outro usuário nem se o `where` for editado depois. O `where user_id = auth.uid()` explícito fica como cinto e suspensório, e ajuda o planner a usar o índice.
 - **`f.data <= hoje`** implementa a decisão de escopo: um lançamento agendado pro futuro não derruba o saldo de hoje. O corte usa o fuso de São Paulo, não UTC.
-- **Sem filtro de `banco_id` na query.** Linhas com `banco_id is null` voltam naturalmente como grupo `null`, que já *é* o balde "sem banco" — nenhum caso especial no SQL.
+- **Sem filtro de `banco_id` na query.** Linhas com `banco_id is null` voltam naturalmente como grupo `null`, que já _é_ o balde "sem banco" — nenhum caso especial no SQL.
 - **`sum` chega como string.** `numeric` do Postgres é serializado como string pelo supabase-js, por isso o `Number(linha.total)` no hook. Sem isso, `+` concatenaria em vez de somar.
 - **Helpers puros exportados do card**, como já era feito em `financeiro-grupos.tsx` — o modal importa `resumirLinhas`/`agruparPorBanco` e recalcula, em vez de receber tudo pronto por prop e duplicar a regra.
 - **Saídas juntam `gasto` e `gasto_fixo`.** `valor` é sempre positivo no banco; o sinal vem só do `tipo`, mesma regra do saldo do período e dos cards de palavra-chave.
@@ -67,5 +67,5 @@ grant execute on function public.financeiro_totais_por_banco() to authenticated;
 ## Pendências
 
 - Rodar o bloco pendente de `bancos`/`banco_id` e depois o SQL acima.
-- Verificar o card contra uma soma manual, e criar um lançamento com data futura pra confirmar que ele *não* entra no saldo.
+- Verificar o card contra uma soma manual, e criar um lançamento com data futura pra confirmar que ele _não_ entra no saldo.
 - **A conferir no dashboard:** o tipo da coluna `financeiro.valor`. Se for `double precision` em vez de `numeric`, a soma acumula erro de ponto flutuante ao longo de milhares de linhas — seria um bug pré-existente que a RPC apenas torna visível.

@@ -1,17 +1,17 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+
 //* Libraries Imports
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ToolbarProps, View } from "react-big-calendar";
 
-//* Components Imports
-import { Button } from "@/components/ui/button";
+//* Types Imports
+import type { ToolbarProps, View } from "react-big-calendar";
+import type { CalendarEvent } from "./types";
 
 //* Utils Imports
 import { cn } from "@/lib/utils";
-
-//* Types Imports
-import type { CalendarEvent } from "./types";
 
 const viewLabels: Record<View, string> = {
   month: "Mês",
@@ -21,15 +21,35 @@ const viewLabels: Record<View, string> = {
   agenda: "Agenda",
 };
 
-export default function CalendarToolbar({ label, view, views, onNavigate, onView }: ToolbarProps<CalendarEvent>) {
-  const availableViews = (Array.isArray(views) ? views : (Object.keys(views) as View[])).filter((viewKey) => viewKey !== "work_week");
+export function CalendarToolbar({ label, view, views, onNavigate, onView }: ToolbarProps<CalendarEvent>) {
+  const availableViews = (Array.isArray(views) ? views : (Object.keys(views) as View[])).filter(
+    (viewKey) => viewKey !== "work_week",
+  );
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-1.5">
-        <Button type="button" variant="outline" size="icon-sm" onClick={() => onNavigate("PREV")} aria-label="Período anterior"><ChevronLeft /></Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>Hoje</Button>
-        <Button type="button" variant="outline" size="icon-sm" onClick={() => onNavigate("NEXT")} aria-label="Próximo período"><ChevronRight /></Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onNavigate("PREV")}
+          aria-label="Período anterior"
+        >
+          <ChevronLeft />
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>
+          Hoje
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          onClick={() => onNavigate("NEXT")}
+          aria-label="Próximo período"
+        >
+          <ChevronRight />
+        </Button>
         <h2 className="ml-2 text-lg font-bold tracking-[-0.02em] text-foreground capitalize">{label}</h2>
       </div>
 

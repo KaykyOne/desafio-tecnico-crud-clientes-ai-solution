@@ -1,19 +1,16 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+import Dialog from "@/components/ui/dialog";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+import Select from "@/components/ui/select";
+
+//* Libraries Imports
 import { useState, type FormEvent } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
+//* Types Imports
 import type { ClientInput, ClientRecord, ClientStatus } from "@/hooks/use-clients";
 
 type ClientFormDialogProps = {
@@ -26,13 +23,7 @@ type ClientFormDialogProps = {
 
 const emptyForm: ClientInput = { name: "", contact: "", status: "active" };
 
-export default function ClientFormDialog({
-  open: isOpen,
-  client,
-  isSaving,
-  onOpenChange,
-  onSubmit,
-}: ClientFormDialogProps) {
+export function ClientFormDialog({ open: isOpen, client, isSaving, onOpenChange, onSubmit }: ClientFormDialogProps) {
   const [form, setForm] = useState<ClientInput>(() =>
     client
       ? {
@@ -56,18 +47,18 @@ export default function ClientFormDialog({
   }
 
   return (
-    <DialogRoot open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-background sm:max-w-lg p-10">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-[-0.04em]">
+    <Dialog.DialogRoot open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog.DialogContent className="bg-background sm:max-w-lg p-10">
+        <Dialog.DialogHeader>
+          <Dialog.DialogTitle className="text-xl font-bold tracking-[-0.04em]">
             {isEditing ? "Editar cliente" : "Novo cliente"}
-          </DialogTitle>
-          <DialogDescription className="px-0">
+          </Dialog.DialogTitle>
+          <Dialog.DialogDescription className="px-0">
             {isEditing
               ? "Atualize os dados deste cliente."
               : "Cadastre um cliente para começar a organizar sua carteira."}
-          </DialogDescription>
-        </DialogHeader>
+          </Dialog.DialogDescription>
+        </Dialog.DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
@@ -103,7 +94,7 @@ export default function ClientFormDialog({
 
           <div className="space-y-2">
             <Label>Status</Label>
-            <SelectRoot
+            <Select.SelectRoot
               value={form.status}
               onValueChange={(value) =>
                 setForm((current) => ({
@@ -112,26 +103,26 @@ export default function ClientFormDialog({
                 }))
               }
             >
-              <SelectTrigger className="h-11 w-full rounded-md bg-background">
-                <SelectValue>{form.status === "active" ? "Ativo" : "Inativo"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="inactive">Inativo</SelectItem>
-              </SelectContent>
-            </SelectRoot>
+              <Select.SelectTrigger className="h-11 w-full rounded-md bg-background">
+                <Select.SelectValue>{form.status === "active" ? "Ativo" : "Inativo"}</Select.SelectValue>
+              </Select.SelectTrigger>
+              <Select.SelectContent>
+                <Select.SelectItem value="active">Ativo</Select.SelectItem>
+                <Select.SelectItem value="inactive">Inativo</Select.SelectItem>
+              </Select.SelectContent>
+            </Select.SelectRoot>
           </div>
 
-          <DialogFooter className="mt-6 border-t-0 bg-transparent p-0">
+          <Dialog.DialogFooter className="mt-6 border-t-0 bg-transparent p-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isSaving}>
               {isSaving ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar cliente"}
             </Button>
-          </DialogFooter>
+          </Dialog.DialogFooter>
         </form>
-      </DialogContent>
-    </DialogRoot>
+      </Dialog.DialogContent>
+    </Dialog.DialogRoot>
   );
 }

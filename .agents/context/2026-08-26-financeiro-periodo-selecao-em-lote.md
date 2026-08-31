@@ -24,7 +24,7 @@ O extrato (`/dashboard/financeiro`) agora filtra por período — por padrão o 
 
 ## Decisão: CSV em vez de biblioteca de Excel
 
-Cheguei a instalar `xlsx` (SheetJS) pra gerar um `.xlsx` de verdade, mas `npm install` acusou uma vulnerabilidade **high** (prototype pollution / ReDoS) nessa versão pública no npm, sem patch disponível no registro. Como o risco está na *leitura* de arquivos maliciosos (não é o meu caso, só gero/escrevo), dava pra justificar o uso, mas optei por não introduzir a dependência vulnerável à toa: troquei por CSV gerado na mão (`lib/financeiro-csv.ts`), sem nenhuma dependência nova.
+Cheguei a instalar `xlsx` (SheetJS) pra gerar um `.xlsx` de verdade, mas `npm install` acusou uma vulnerabilidade **high** (prototype pollution / ReDoS) nessa versão pública no npm, sem patch disponível no registro. Como o risco está na _leitura_ de arquivos maliciosos (não é o meu caso, só gero/escrevo), dava pra justificar o uso, mas optei por não introduzir a dependência vulnerável à toa: troquei por CSV gerado na mão (`lib/financeiro-csv.ts`), sem nenhuma dependência nova.
 
 - Separador `;` (não `,`) porque o Excel em pt-BR usa vírgula como separador decimal — com `,` como delimitador de coluna, os valores quebrariam ao abrir.
 - BOM UTF-8 (`﻿`) no início do arquivo pra acentuação não quebrar no Excel.

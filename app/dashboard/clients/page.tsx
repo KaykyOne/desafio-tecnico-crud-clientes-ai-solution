@@ -1,19 +1,26 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+//* Components Imports
+import Badge from "@/components/ui/badge";
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+import Select from "@/components/ui/select";
+import Table from "@/components/ui/table";
+
+import { ClientFormDialog, ClientsSkeleton, DeleteClientDialog, StatCard } from "./_components";
+
+//* Libraries Imports
+import { useMemo, useState } from "react";
 import { Pencil, Plus, Search, Trash2, UsersRound } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Table from "@/components/ui/table";
-import { useClients, type ClientRecord, type ClientStatus } from "@/hooks/use-clients";
-import { formatTimestamp } from "@/lib/format-date";
+//* Hooks Imports
+import { useClients } from "@/hooks/use-clients";
 
-import ClientFormDialog from "./_components/client-form-dialog";
-import ClientsSkeleton from "./_components/clients-skeleton";
-import DeleteClientDialog from "./_components/delete-client-dialog";
+//* Types Imports
+import type { ClientRecord, ClientStatus } from "@/hooks/use-clients";
+
+//* Utils Imports
+import { formatTimestamp } from "@/lib/format-date";
 
 function isActive(status: string) {
   return status.toLowerCase() !== "inativo" && status.toLowerCase() !== "inactive";
@@ -99,21 +106,21 @@ export default function ClientsPage() {
                 />
               </div>
 
-              <SelectRoot
+              <Select.SelectRoot
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value as ClientStatus | "all")}
               >
-                <SelectTrigger aria-label="Filtrar por status" className="h-11 w-full bg-background sm:w-40">
-                  <SelectValue>
+                <Select.SelectTrigger aria-label="Filtrar por status" className="h-11 w-full bg-background sm:w-40">
+                  <Select.SelectValue>
                     {statusFilter === "all" ? "Todos" : statusFilter === "active" ? "Ativos" : "Inativos"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Ativos</SelectItem>
-                  <SelectItem value="inactive">Inativos</SelectItem>
-                  <SelectItem value="all">Todos</SelectItem>
-                </SelectContent>
-              </SelectRoot>
+                  </Select.SelectValue>
+                </Select.SelectTrigger>
+                <Select.SelectContent>
+                  <Select.SelectItem value="active">Ativos</Select.SelectItem>
+                  <Select.SelectItem value="inactive">Inativos</Select.SelectItem>
+                  <Select.SelectItem value="all">Todos</Select.SelectItem>
+                </Select.SelectContent>
+              </Select.SelectRoot>
             </div>
 
             <Table.TableRoot>
@@ -221,32 +228,5 @@ export default function ClientsPage() {
         onConfirm={() => (deletingClient ? deleteClient(deletingClient.id) : Promise.resolve(false))}
       />
     </section>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  tone: "neutral" | "active" | "inactive";
-}) {
-  const styles = {
-    neutral: "border-border bg-muted text-foreground",
-    active: "border-border bg-muted text-foreground",
-    inactive: "border-border bg-background text-muted-foreground",
-  };
-  return (
-    <div className={`rounded-2xl border p-5 ${styles[tone]}`}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold opacity-75">{label}</p>
-        <span className="flex size-7 items-center justify-center rounded-lg bg-white/70">{icon}</span>
-      </div>
-      <p className="mt-4 text-3xl font-black tracking-[-0.06em]">{value}</p>
-    </div>
   );
 }

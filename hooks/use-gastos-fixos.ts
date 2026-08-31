@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { get, patch, post, remove } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
+
+//* Utils Imports
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export type GastoFixoRecord = {
   id: string;
@@ -28,27 +32,8 @@ export type GastoFixoInput = {
   data_fim: string | null;
 };
 
-const SELECT_COLUMNS = "id, user_id, descricao, valor, dia_cobranca, data_inicio, data_fim, ativo, created_at, updated_at";
-
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
+const SELECT_COLUMNS =
+  "id, user_id, descricao, valor, dia_cobranca, data_inicio, data_fim, ativo, created_at, updated_at";
 
 export function useGastosFixos() {
   const [gastosFixos, setGastosFixos] = useState<GastoFixoRecord[]>([]);
@@ -61,18 +46,18 @@ export function useGastosFixos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { data, error } = await supabase
-        .from("gastos_fixos")
-        .select(SELECT_COLUMNS)
-        .eq("user_id", userId)
-        .order("ativo", { ascending: false })
-        .order("dia_cobranca", { ascending: true });
-
-      if (error) throw error;
-      setGastosFixos((data ?? []) as GastoFixoRecord[]);
+      const data = await get<GastoFixoRecord>("gastos_fixos", {
+        select: SELECT_COLUMNS,
+        filters: { user_id: userId },
+        order: [
+          { column: "ativo", ascending: false },
+          { column: "dia_cobranca", ascending: true },
+        ],
+      });
+      setGastosFixos(data);
     } catch (error) {
       toast.error("Não foi possível carregar os gastos fixos", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao listar gastos fixos:", error);
     } finally {
@@ -91,19 +76,17 @@ export function useGastosFixos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("gastos_fixos").insert({
+      await post("gastos_fixos", {
         ...input,
         descricao: input.descricao.trim() || null,
         user_id: userId,
       });
-
-      if (error) throw error;
       await fetchGastosFixos();
       toast.success("Gasto fixo cadastrado");
       return true;
     } catch (error) {
       toast.error("Não foi possível cadastrar o gasto fixo", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao cadastrar gasto fixo:", error);
       return false;
@@ -117,19 +100,13 @@ export function useGastosFixos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("gastos_fixos")
-        .update({ ...input, descricao: input.descricao.trim() || null })
-        .eq("id", id)
-        .eq("user_id", userId);
-
-      if (error) throw error;
+      await patch("gastos_fixos", { ...input, descricao: input.descricao.trim() || null }, { id: id, user_id: userId });
       await fetchGastosFixos();
       toast.success("Gasto fixo atualizado");
       return true;
     } catch (error) {
       toast.error("Não foi possível atualizar o gasto fixo", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao atualizar gasto fixo:", error);
       return false;
@@ -144,15 +121,13 @@ export function useGastosFixos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("gastos_fixos").update({ ativo }).eq("id", id).eq("user_id", userId);
-
-      if (error) throw error;
+      await patch("gastos_fixos", { ativo }, { id: id, user_id: userId });
       toast.success(ativo ? "Gasto fixo ativado" : "Gasto fixo desativado");
       return true;
     } catch (error) {
       setGastosFixos(previousGastosFixos);
       toast.error("Não foi possível alterar o gasto fixo", {
-        description: getSupabaseErrorMessage(error, "A alteração foi desfeita. Tente novamente."),
+        description: getApiErrorMessage(error, "A alteração foi desfeita. Tente novamente."),
       });
       console.error("Erro ao ativar/desativar gasto fixo:", error);
       return false;
@@ -164,15 +139,13 @@ export function useGastosFixos() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("gastos_fixos").delete().eq("id", id).eq("user_id", userId);
-
-      if (error) throw error;
+      await remove("gastos_fixos", { id: id, user_id: userId });
       setGastosFixos((current) => current.filter((gasto) => gasto.id !== id));
       toast.success("Gasto fixo excluído");
       return true;
     } catch (error) {
       toast.error("Não foi possível excluir o gasto fixo", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao excluir gasto fixo:", error);
       return false;

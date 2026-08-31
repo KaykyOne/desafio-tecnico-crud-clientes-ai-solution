@@ -5,9 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { getOne, post, remove, rpc } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
 
 //* Utils Imports
+import { getApiErrorMessage, isUniqueViolation } from "@/lib/api-error";
 import { formatDuration, secondsSince } from "@/lib/format-duration";
 
 export type TaskTimeEntryRecord = {
@@ -21,32 +23,15 @@ export type TaskTimeEntryRecord = {
 
 export type TaskTimeTotais = { hojeSegundos: number; semanaSegundos: number; mesSegundos: number };
 
-const SELECT_COLUMNS = "id, user_id, task_id, started_at, ended_at, created_at";
+const SELECT_COLUMNS = "id,user_id,task_id,started_at,ended_at,created_at";
+
+type TotaisResponse = {
+  hoje_segundos: number | string;
+  semana_segundos: number | string;
+  mes_segundos: number | string;
+};
+type PorTarefaResponse = { task_id: string; segundos: number | string };
 const TOTAIS_ZERADOS: TaskTimeTotais = { hojeSegundos: 0, semanaSegundos: 0, mesSegundos: 0 };
-
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-function isUniqueViolation(error: unknown) {
-  return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
 
 /** Fuso do navegador, com o Brasil como rede de segurança — os totais são agrupados por dia local. */
 function getTimezone() {
@@ -79,18 +64,17 @@ export function useTaskTimer() {
     try {
       const userId = await getAuthenticatedUserId();
       const [ativa, totaisResult, porTarefa] = await Promise.all([
-        supabase.from("task_time_entries").select(SELECT_COLUMNS).eq("user_id", userId).is("ended_at", null).maybeSingle(),
-        supabase.rpc("task_time_totais", { p_timezone: getTimezone() }),
-        supabase.rpc("task_time_por_tarefa"),
+        getOne<TaskTimeEntryRecord>("task_time_entries", {
+          select: SELECT_COLUMNS,
+          filters: { user_id: userId, ended_at: null },
+        }),
+        rpc<TotaisResponse[]>("task_time_totais", { p_timezone: getTimezone() }),
+        rpc<PorTarefaResponse[]>("task_time_por_tarefa"),
       ]);
 
-      if (ativa.error) throw ativa.error;
-      if (totaisResult.error) throw totaisResult.error;
-      if (porTarefa.error) throw porTarefa.error;
+      setRunningEntry(ativa);
 
-      setRunningEntry((ativa.data as TaskTimeEntryRecord | null) ?? null);
-
-      const linhaTotais = (totaisResult.data ?? [])[0];
+      const linhaTotais = (totaisResult ?? [])[0];
       setTotais(
         linhaTotais
           ? {
@@ -102,17 +86,10 @@ export function useTaskTimer() {
       );
       setTotaisAtualizadosEm(Date.now());
 
-      setSecondsByTaskId(
-        Object.fromEntries(
-          ((porTarefa.data ?? []) as { task_id: string; segundos: number | string }[]).map((linha) => [
-            linha.task_id,
-            Number(linha.segundos),
-          ]),
-        ),
-      );
+      setSecondsByTaskId(Object.fromEntries((porTarefa ?? []).map((linha) => [linha.task_id, Number(linha.segundos)])));
     } catch (error) {
       toast.error("Não foi possível carregar os cronômetros", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao carregar cronômetros:", error);
     } finally {
@@ -139,10 +116,8 @@ export function useTaskTimer() {
 
   /** Finaliza o cronômetro ativo no servidor. Devolve os segundos gravados, ou null se nada rodava. */
   async function finalizarNoServidor() {
-    const { data, error } = await supabase.rpc("task_time_finalizar");
-    if (error) throw error;
-
-    const entrada = (Array.isArray(data) ? data[0] : data) as TaskTimeEntryRecord | null;
+    const data = await rpc<TaskTimeEntryRecord | TaskTimeEntryRecord[] | null>("task_time_finalizar");
+    const entrada = Array.isArray(data) ? (data[0] ?? null) : data;
     if (!entrada?.ended_at) return null;
 
     const segundos = Math.max(
@@ -180,7 +155,7 @@ export function useTaskTimer() {
       return true;
     } catch (error) {
       toast.error("Não foi possível finalizar o cronômetro", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao finalizar cronômetro:", error);
       return false;
@@ -208,24 +183,25 @@ export function useTaskTimer() {
       }
 
       // `started_at` é omitido de propósito — o default `now()` da coluna usa o relógio do servidor.
-      const { data, error } = await supabase
-        .from("task_time_entries")
-        .insert({ user_id: userId, task_id: taskId })
-        .select(SELECT_COLUMNS)
-        .single();
+      const [entrada] = await post<TaskTimeEntryRecord>(
+        "task_time_entries",
+        { user_id: userId, task_id: taskId },
+        { select: SELECT_COLUMNS },
+      );
 
-      if (error) throw error;
-      setRunningEntry(data as TaskTimeEntryRecord);
+      setRunningEntry(entrada);
       // Cronômetro novo nasce com zero decorrido, então os totais estão exatos agora.
       setTotaisAtualizadosEm(Date.now());
       return true;
     } catch (error) {
       if (isUniqueViolation(error)) {
-        toast.error("Já existe um cronômetro rodando", { description: "Atualizamos a tela com o estado mais recente." });
+        toast.error("Já existe um cronômetro rodando", {
+          description: "Atualizamos a tela com o estado mais recente.",
+        });
         void fetchTimer();
       } else {
         toast.error("Não foi possível iniciar o cronômetro", {
-          description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+          description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
         });
       }
       console.error("Erro ao iniciar cronômetro:", error);
@@ -243,19 +219,13 @@ export function useTaskTimer() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("task_time_entries")
-        .delete()
-        .eq("id", runningEntry.id)
-        .eq("user_id", userId);
-
-      if (error) throw error;
+      await remove("task_time_entries", { id: runningEntry.id, user_id: userId });
       setRunningEntry(null);
       toast.success("Cronômetro descartado");
       return true;
     } catch (error) {
       toast.error("Não foi possível descartar o cronômetro", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao descartar cronômetro:", error);
       return false;
