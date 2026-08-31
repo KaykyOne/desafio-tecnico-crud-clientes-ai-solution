@@ -1,6 +1,7 @@
+//* Libraries Imports
 import { UsersRound } from "lucide-react";
 
-export default function AuthBrand({ compact = false }: { compact?: boolean }) {
+export function AuthBrand({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <div className="flex items-center gap-2.5 font-semibold tracking-tight text-foreground">

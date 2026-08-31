@@ -1,5 +1,5 @@
 //* Components Imports
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton";
 
 //* Utils Imports
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ type CardSkeletonProps = {
   className?: string;
 };
 
-export default function CardSkeleton({ lines = 2, className }: CardSkeletonProps) {
+export function CardSkeleton({ lines = 2, className }: CardSkeletonProps) {
   return (
     <div
       aria-hidden="true"

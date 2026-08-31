@@ -1,9 +1,15 @@
 "use client";
 
+//* Libraries Imports
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { supabase } from "./supabase";
+//* Services Imports
+import { get, patch, post, remove } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
+
+//* Utils Imports
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export type ClientStatus = "active" | "inactive";
 
@@ -23,26 +29,6 @@ export type ClientInput = {
   status: ClientStatus;
 };
 
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
-
 export function useClients() {
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,17 +40,15 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, user_id, name, contact, status, created_at, updated_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setClients(data ?? []);
+      const data = await get<ClientRecord>("clients", {
+        select: "id, user_id, name, contact, status, created_at, updated_at",
+        filters: { user_id: userId },
+        order: [{ column: "created_at", ascending: false }],
+      });
+      setClients(data);
     } catch (error) {
       toast.error("Não foi possível carregar os clientes", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao listar clientes:", error);
     } finally {
@@ -83,15 +67,13 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("clients").insert({ ...input, user_id: userId });
-
-      if (error) throw error;
+      await post("clients", { ...input, user_id: userId });
       await fetchClients();
       toast.success("Cliente cadastrado");
       return true;
     } catch (error) {
       toast.error("Não foi possível cadastrar o cliente", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao cadastrar cliente:", error);
       return false;
@@ -105,15 +87,13 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("clients").update(input).eq("id", id).eq("user_id", userId);
-
-      if (error) throw error;
+      await patch("clients", input, { id: id, user_id: userId });
       await fetchClients();
       toast.success("Cliente atualizado");
       return true;
     } catch (error) {
       toast.error("Não foi possível atualizar o cliente", {
-        description: getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
+        description: getApiErrorMessage(error, "Confira os dados e tente novamente."),
       });
       console.error("Erro ao atualizar cliente:", error);
       return false;
@@ -127,15 +107,13 @@ export function useClients() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("clients").delete().eq("id", id).eq("user_id", userId);
-
-      if (error) throw error;
+      await remove("clients", { id: id, user_id: userId });
       setClients((current) => current.filter((client) => client.id !== id));
       toast.success("Cliente excluído");
       return true;
     } catch (error) {
       toast.error("Não foi possível excluir o cliente", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao excluir cliente:", error);
       return false;

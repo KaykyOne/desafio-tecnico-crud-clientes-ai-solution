@@ -5,10 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { rpc } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
 
 //* Types Imports
-import type { FinanceiroTipo } from "./use-financeiro";
+import type { FinanceiroTipo } from "@/hooks/use-financeiro";
+
+//* Utils Imports
+import { getApiErrorMessage } from "@/lib/api-error";
 
 /** Uma linha por combinação (banco, tipo), já somada pelo Postgres. `banco_id` nulo = "sem banco". */
 export type FinanceiroTotalLinha = {
@@ -17,31 +21,17 @@ export type FinanceiroTotalLinha = {
   total: number;
 };
 
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
+type TotalLinhaResponse = {
+  banco_id: string | null;
+  tipo: string;
+  total: number | string;
+};
 
 /**
  * Totais acumulados do financeiro (até hoje), agrupados por banco e tipo.
  *
  * Não dá pra derivar de `useFinanceiro`: aquele hook busca só o período filtrado. E buscar tudo
- * no cliente não serve porque o PostgREST corta a resposta em 1000 linhas — o saldo ficaria
+ * no cliente não serve porque a API corta a resposta em 1000 linhas — o saldo ficaria
  * silenciosamente errado conforme o histórico cresce. A RPC soma no banco e devolve um punhado
  * de linhas, independente do tamanho do histórico.
  */
@@ -55,20 +45,19 @@ export function useFinanceiroSaldo() {
 
     try {
       await getAuthenticatedUserId();
-      const { data, error } = await supabase.rpc("financeiro_totais_por_banco");
+      const data = await rpc<TotalLinhaResponse[]>("financeiro_totais_por_banco");
 
-      if (error) throw error;
       setLinhas(
-        (data ?? []).map((linha: { banco_id: string | null; tipo: string; total: number | string }) => ({
+        (data ?? []).map((linha) => ({
           banco_id: linha.banco_id,
           tipo: linha.tipo as FinanceiroTipo,
-          // `numeric` do Postgres chega como string no supabase-js.
+          // `numeric` do Postgres chega como string.
           total: Number(linha.total),
         })),
       );
     } catch (error) {
       toast.error("Não foi possível calcular o saldo", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao calcular totais do financeiro:", error);
     } finally {

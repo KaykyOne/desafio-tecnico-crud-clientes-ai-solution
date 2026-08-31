@@ -1,12 +1,14 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+
+import { FinanceiroGrupoDialog } from "./financeiro-grupo-dialog";
+
 //* Libraries Imports
 import { useState, type KeyboardEvent } from "react";
 import { Plus, X } from "lucide-react";
-
-//* Components Imports
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 //* Types Imports
 import type { FinanceiroRecord } from "@/hooks/use-financeiro";
@@ -15,8 +17,6 @@ import type { FinanceiroGrupoRecord } from "@/hooks/use-financeiro-grupos";
 //* Utils Imports
 import { formatCurrency } from "@/lib/format-currency";
 import { normalizeText } from "@/lib/normalize-text";
-
-import FinanceiroGrupoDialog from "./financeiro-grupo-dialog";
 
 type FinanceiroGruposProps = {
   grupos: FinanceiroGrupoRecord[];
@@ -42,7 +42,15 @@ export function sumGrupoRecords(matching: FinanceiroRecord[]) {
   return matching.reduce((sum, record) => sum + (record.tipo === "ganho" ? record.valor : -record.valor), 0);
 }
 
-export default function FinanceiroGrupos({ grupos, records, isSaving, deletingId, onCreate, onUpdate, onDelete }: FinanceiroGruposProps) {
+export function FinanceiroGrupos({
+  grupos,
+  records,
+  isSaving,
+  deletingId,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: FinanceiroGruposProps) {
   const [newTermo, setNewTermo] = useState("");
   const [pendingTermos, setPendingTermos] = useState<string[]>([]);
   const [pendingNome, setPendingNome] = useState("");
@@ -106,11 +114,20 @@ export default function FinanceiroGrupos({ grupos, records, isSaving, deletingId
               >
                 <X />
               </Button>
-              <p className="truncate pr-6 text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground" title={titulo}>
+              <p
+                className="truncate pr-6 text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground"
+                title={titulo}
+              >
                 {titulo}
               </p>
-              <p className={`mt-2 text-xl font-black tracking-[-0.04em] ${total < 0 ? "text-rose-700" : "text-foreground"}`}>{formatCurrency(total)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{grupo.termos.length === 1 ? "1 palavra-chave" : `${grupo.termos.length} palavras-chave`}</p>
+              <p
+                className={`mt-2 text-xl font-black tracking-[-0.04em] ${total < 0 ? "text-rose-700" : "text-foreground"}`}
+              >
+                {formatCurrency(total)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {grupo.termos.length === 1 ? "1 palavra-chave" : `${grupo.termos.length} palavras-chave`}
+              </p>
             </button>
           );
         })}
@@ -119,9 +136,17 @@ export default function FinanceiroGrupos({ grupos, records, isSaving, deletingId
           {pendingTermos.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {pendingTermos.map((termo) => (
-                <span key={termo} className="flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs font-medium">
+                <span
+                  key={termo}
+                  className="flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs font-medium"
+                >
                   {termo}
-                  <button type="button" onClick={() => removePendingTermo(termo)} aria-label={`Remover palavra ${termo}`} className="text-muted-foreground hover:text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => removePendingTermo(termo)}
+                    aria-label={`Remover palavra ${termo}`}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
                     <X className="size-3" />
                   </button>
                 </span>
@@ -137,7 +162,14 @@ export default function FinanceiroGrupos({ grupos, records, isSaving, deletingId
               aria-label="Palavra-chave do novo card"
               className="h-9 bg-background"
             />
-            <Button type="button" size="icon-sm" variant="outline" disabled={!newTermo.trim()} onClick={addPendingTermo} aria-label="Adicionar palavra ao card">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="outline"
+              disabled={!newTermo.trim()}
+              onClick={addPendingTermo}
+              aria-label="Adicionar palavra ao card"
+            >
               <Plus />
             </Button>
           </div>
@@ -166,7 +198,9 @@ export default function FinanceiroGrupos({ grupos, records, isSaving, deletingId
           grupo={openGrupo}
           records={records}
           isSaving={isSaving}
-          onOpenChange={(open) => { if (!open) setOpenGrupoId(null); }}
+          onOpenChange={(open) => {
+            if (!open) setOpenGrupoId(null);
+          }}
           onUpdate={onUpdate}
           onDelete={async (id) => {
             const success = await onDelete(id);

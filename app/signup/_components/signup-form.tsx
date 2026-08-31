@@ -1,16 +1,22 @@
 "use client";
 
-import type { FormEvent } from "react";
+//* Components Imports
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+
+//* Libraries Imports
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+//* Hooks Imports
 import { useSignup } from "@/hooks/use-signup";
 
-export default function SignupForm() {
+//* Types Imports
+import type { FormEvent } from "react";
+
+export function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +43,9 @@ export default function SignupForm() {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-[0.72rem] font-semibold">Nome</Label>
+          <Label htmlFor="name" className="text-[0.72rem] font-semibold">
+            Nome
+          </Label>
           <Input
             id="name"
             type="text"
@@ -51,7 +59,9 @@ export default function SignupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-email" className="text-[0.72rem] font-semibold">E-mail</Label>
+          <Label htmlFor="signup-email" className="text-[0.72rem] font-semibold">
+            E-mail
+          </Label>
           <Input
             id="signup-email"
             type="email"
@@ -65,7 +75,9 @@ export default function SignupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-password" className="text-[0.72rem] font-semibold">Senha</Label>
+          <Label htmlFor="signup-password" className="text-[0.72rem] font-semibold">
+            Senha
+          </Label>
           <Input
             id="signup-password"
             type="password"
@@ -80,7 +92,9 @@ export default function SignupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-confirm-password" className="text-[0.72rem] font-semibold">Confirmar senha</Label>
+          <Label htmlFor="signup-confirm-password" className="text-[0.72rem] font-semibold">
+            Confirmar senha
+          </Label>
           <Input
             id="signup-confirm-password"
             type="password"

@@ -63,7 +63,7 @@ create policy "Eventos are deletable by owner" on public.eventos for delete to a
 
 ## Bug corrigido (fora do escopo do pedido, mas achado no caminho)
 
-**Sintoma:** todo `Button` renderizado com `render={<Link .../>}` (usado em toda a navegação — sidebar, landing, login) disparava um warning do Base UI no console: *"A component that acts as a button expected a native `<button>` because the `nativeButton` prop is true"*.
+**Sintoma:** todo `Button` renderizado com `render={<Link .../>}` (usado em toda a navegação — sidebar, landing, login) disparava um warning do Base UI no console: _"A component that acts as a button expected a native `<button>` because the `nativeButton` prop is true"_.
 
 **Causa:** `components/ui/button.tsx` fixava `nativeButton={true}` incondicionalmente, mesmo quando `render` trocava o elemento renderizado para uma `<a>` (via `next/link`).
 

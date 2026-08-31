@@ -1,26 +1,26 @@
 "use client";
 
+//* Components Imports
+import Badge from "@/components/ui/badge";
+import Button from "@/components/ui/button";
+import Label from "@/components/ui/label";
+import Select from "@/components/ui/select";
+import Sheet from "@/components/ui/sheet";
+
+import { TaskTimerDisplay } from "./task-timer-display";
+
 //* Libraries Imports
 import { Check, Play, Square, Trash2 } from "lucide-react";
-
-//* Components Imports
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SheetContent, SheetDescription, SheetHeader, SheetRoot, SheetTitle } from "@/components/ui/sheet";
 
 //* Types Imports
 import type { ClientRecord } from "@/hooks/use-clients";
 import type { TaskColumnRecord } from "@/hooks/use-task-columns";
 import type { TaskPriority, TaskQuickPatch, TaskRecord } from "@/hooks/use-tasks";
+import type { TaskTimerProps } from "./task-card";
 
 //* Utils Imports
 import { formatDuration } from "@/lib/format-duration";
 import { cn } from "@/lib/utils";
-
-import TaskTimerDisplay from "./task-timer-display";
-import type { TaskTimerProps } from "./task-card";
 
 type TaskQuickEditSheetProps = {
   task: TaskRecord;
@@ -33,12 +33,20 @@ type TaskQuickEditSheetProps = {
 };
 
 const priorityOptions: { value: TaskPriority; label: string; style: string }[] = [
-  { value: "low", label: "Baixa", style: "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950" },
+  {
+    value: "low",
+    label: "Baixa",
+    style: "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950",
+  },
   { value: "medium", label: "Média", style: "border-amber-400 bg-amber-400 text-amber-950" },
-  { value: "high", label: "Urgente", style: "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500" },
+  {
+    value: "high",
+    label: "Urgente",
+    style: "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500",
+  },
 ];
 
-export default function TaskQuickEditSheet({
+export function TaskQuickEditSheet({
   task,
   clients,
   columns,
@@ -53,12 +61,12 @@ export default function TaskQuickEditSheet({
   const loggedSeconds = timer.secondsByTaskId[task.id] ?? 0;
 
   return (
-    <SheetRoot open onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full gap-6 p-6 sm:max-w-sm">
-        <SheetHeader className="p-0">
-          <SheetTitle className="text-lg font-bold tracking-[-0.03em]">Edição rápida</SheetTitle>
-          <SheetDescription className="line-clamp-2">{task.title}</SheetDescription>
-        </SheetHeader>
+    <Sheet.SheetRoot open onOpenChange={onOpenChange}>
+      <Sheet.SheetContent side="right" className="w-full gap-6 p-6 sm:max-w-sm">
+        <Sheet.SheetHeader className="p-0">
+          <Sheet.SheetTitle className="text-lg font-bold tracking-[-0.03em]">Edição rápida</Sheet.SheetTitle>
+          <Sheet.SheetDescription className="line-clamp-2">{task.title}</Sheet.SheetDescription>
+        </Sheet.SheetHeader>
 
         <div className="space-y-3 rounded-xl border bg-muted p-4">
           <Label>Execução</Label>
@@ -108,18 +116,21 @@ export default function TaskQuickEditSheet({
         {/* No celular, mover é a necessidade mais comum — e este é o caminho sem arrastar. */}
         <div className="space-y-3">
           <Label>Coluna</Label>
-          <SelectRoot value={task.column_id} onValueChange={(value) => value && void onMoveToColumn(task.id, value)}>
-            <SelectTrigger className="h-11 w-full bg-background">
-              <SelectValue>{selectedColumn?.name ?? "—"}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
+          <Select.SelectRoot
+            value={task.column_id}
+            onValueChange={(value) => value && void onMoveToColumn(task.id, value)}
+          >
+            <Select.SelectTrigger className="h-11 w-full bg-background">
+              <Select.SelectValue>{selectedColumn?.name ?? "—"}</Select.SelectValue>
+            </Select.SelectTrigger>
+            <Select.SelectContent>
               {columns.map((column) => (
-                <SelectItem key={column.id} value={column.id}>
+                <Select.SelectItem key={column.id} value={column.id}>
                   {column.name}
-                </SelectItem>
+                </Select.SelectItem>
               ))}
-            </SelectContent>
-          </SelectRoot>
+            </Select.SelectContent>
+          </Select.SelectRoot>
         </div>
 
         <div className="space-y-3">
@@ -150,29 +161,29 @@ export default function TaskQuickEditSheet({
 
         <div className="space-y-3">
           <Label>Cliente</Label>
-          <SelectRoot
+          <Select.SelectRoot
             value={task.cliente_id ?? "none"}
             onValueChange={(value) => void onPatch(task.id, { cliente_id: value === "none" ? null : value })}
           >
-            <SelectTrigger className="h-11 w-full bg-background">
-              <SelectValue>{selectedClient?.name ?? "Nenhum"}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Nenhum</SelectItem>
+            <Select.SelectTrigger className="h-11 w-full bg-background">
+              <Select.SelectValue>{selectedClient?.name ?? "Nenhum"}</Select.SelectValue>
+            </Select.SelectTrigger>
+            <Select.SelectContent>
+              <Select.SelectItem value="none">Nenhum</Select.SelectItem>
               {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
+                <Select.SelectItem key={client.id} value={client.id}>
                   {client.name}
-                </SelectItem>
+                </Select.SelectItem>
               ))}
-            </SelectContent>
-          </SelectRoot>
+            </Select.SelectContent>
+          </Select.SelectRoot>
           {clients.length === 0 && (
             <p className="text-xs text-muted-foreground">Você ainda não cadastrou nenhum cliente.</p>
           )}
         </div>
 
         <p className="mt-auto text-xs text-muted-foreground">As alterações são salvas automaticamente.</p>
-      </SheetContent>
-    </SheetRoot>
+      </Sheet.SheetContent>
+    </Sheet.SheetRoot>
   );
 }

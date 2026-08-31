@@ -1,15 +1,15 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+import Dialog from "@/components/ui/dialog";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+import Select from "@/components/ui/select";
+
 //* Libraries Imports
 import { useState, type FormEvent } from "react";
 import { Trash2, X } from "lucide-react";
-
-//* Components Imports
-import { Button } from "@/components/ui/button";
-import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogRoot, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectContent, SelectItem, SelectRoot, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 //* Types Imports
 import type { BancoRecord } from "@/hooks/use-bancos";
@@ -27,7 +27,15 @@ type BancosDialogProps = {
   onDelete: (id: string) => Promise<boolean>;
 };
 
-export default function BancosDialog({ open, bancos, isSaving, deletingId, onOpenChange, onCreate, onDelete }: BancosDialogProps) {
+export function BancosDialog({
+  open,
+  bancos,
+  isSaving,
+  deletingId,
+  onOpenChange,
+  onCreate,
+  onDelete,
+}: BancosDialogProps) {
   const [preset, setPreset] = useState("");
   const [nomeCustom, setNomeCustom] = useState("");
 
@@ -42,32 +50,38 @@ export default function BancosDialog({ open, bancos, isSaving, deletingId, onOpe
   }
 
   return (
-    <DialogRoot open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-background p-6 sm:max-w-lg sm:p-8">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-[-0.04em]">Bancos</DialogTitle>
-          <DialogDescription>Cadastre os bancos que você usa pra anexar aos lançamentos e importações.</DialogDescription>
-        </DialogHeader>
+    <Dialog.DialogRoot open={open} onOpenChange={onOpenChange}>
+      <Dialog.DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-background p-6 sm:max-w-lg sm:p-8">
+        <Dialog.DialogHeader>
+          <Dialog.DialogTitle className="text-xl font-bold tracking-[-0.04em]">Bancos</Dialog.DialogTitle>
+          <Dialog.DialogDescription>
+            Cadastre os bancos que você usa pra anexar aos lançamentos e importações.
+          </Dialog.DialogDescription>
+        </Dialog.DialogHeader>
 
         <form className="space-y-4 rounded-lg border bg-card p-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label>Escolha um banco conhecido</Label>
-            <SelectRoot
+            <Select.SelectRoot
               value={preset}
               onValueChange={(value) => {
                 setPreset(value ?? "");
                 setNomeCustom("");
               }}
             >
-              <SelectTrigger className="h-11 w-full bg-background">
-                <SelectValue>{BANCOS_BRASILEIROS.find((banco) => banco.codigo === preset)?.nome ?? "Selecione..."}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
+              <Select.SelectTrigger className="h-11 w-full bg-background">
+                <Select.SelectValue>
+                  {BANCOS_BRASILEIROS.find((banco) => banco.codigo === preset)?.nome ?? "Selecione..."}
+                </Select.SelectValue>
+              </Select.SelectTrigger>
+              <Select.SelectContent>
                 {BANCOS_BRASILEIROS.map((banco) => (
-                  <SelectItem key={banco.codigo} value={banco.codigo}>{banco.nome}</SelectItem>
+                  <Select.SelectItem key={banco.codigo} value={banco.codigo}>
+                    {banco.nome}
+                  </Select.SelectItem>
                 ))}
-              </SelectContent>
-            </SelectRoot>
+              </Select.SelectContent>
+            </Select.SelectRoot>
           </div>
 
           <div className="space-y-2">
@@ -85,24 +99,42 @@ export default function BancosDialog({ open, bancos, isSaving, deletingId, onOpe
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSaving || !nomeParaSalvar}>{isSaving ? "Salvando..." : "Adicionar banco"}</Button>
+            <Button type="submit" disabled={isSaving || !nomeParaSalvar}>
+              {isSaving ? "Salvando..." : "Adicionar banco"}
+            </Button>
           </div>
         </form>
 
         <ul className="space-y-2">
-          {bancos.length === 0 && <li className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">Nenhum banco cadastrado.</li>}
+          {bancos.length === 0 && (
+            <li className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Nenhum banco cadastrado.
+            </li>
+          )}
           {bancos.map((banco) => (
             <li key={banco.id} className="flex items-center gap-3 rounded-lg border bg-background p-3">
               <p className="min-w-0 flex-1 truncate text-sm font-medium">{banco.nome}</p>
-              <Button type="button" variant="ghost" size="icon-sm" disabled={deletingId === banco.id} onClick={() => void onDelete(banco.id)} aria-label={`Excluir ${banco.nome}`}><Trash2 /></Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={deletingId === banco.id}
+                onClick={() => void onDelete(banco.id)}
+                aria-label={`Excluir ${banco.nome}`}
+              >
+                <Trash2 />
+              </Button>
             </li>
           ))}
         </ul>
 
-        <DialogFooter className="mt-2 border-t-0 bg-transparent p-0">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}><X />Fechar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </DialogRoot>
+        <Dialog.DialogFooter className="mt-2 border-t-0 bg-transparent p-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <X />
+            Fechar
+          </Button>
+        </Dialog.DialogFooter>
+      </Dialog.DialogContent>
+    </Dialog.DialogRoot>
   );
 }

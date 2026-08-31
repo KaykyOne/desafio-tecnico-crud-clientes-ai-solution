@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+//* Components Imports
+import { DashboardAuthGuard } from "./_components/dashboard-auth-guard";
+import { DashboardSidebar } from "./_components/dashboard-sidebar";
 
-import DashboardAuthGuard from "./_components/dashboard-auth-guard";
-import DashboardSidebar from "./_components/dashboard-sidebar";
+//* Types Imports
+import type { ReactNode } from "react";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

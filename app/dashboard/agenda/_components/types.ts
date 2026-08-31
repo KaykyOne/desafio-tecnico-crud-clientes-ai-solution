@@ -1,3 +1,4 @@
+//* Types Imports
 import type { EventoRecord } from "@/hooks/use-eventos";
 
 export type CalendarEvent = {

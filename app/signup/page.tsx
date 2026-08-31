@@ -1,13 +1,16 @@
 "use client";
 
+//* Components Imports
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
+
+import { SignupForm } from "./_components/signup-form";
+
+//* Libraries Imports
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-
-import AuthBrand from "@/app/_components/auth-brand";
-import SiteFooter from "@/app/_components/site-footer";
-import SignupForm from "./_components/signup-form";
+import { AuthBrand } from "@/app/_components/auth-brand";
+import { SiteFooter } from "@/app/_components/site-footer";
 
 export default function SignupPage() {
   return (

@@ -1,13 +1,17 @@
 "use client";
 
-import type { FormEvent } from "react";
+//* Components Imports
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SettingsSkeleton } from "./_components/settings-skeleton";
+
+//* Hooks Imports
 import { useProfile } from "@/hooks/use-profile";
 
-import SettingsSkeleton from "./_components/settings-skeleton";
+//* Types Imports
+import type { FormEvent } from "react";
 
 export default function SettingsPage() {
   const { profile, setProfile, isLoading, isSaving, updateProfile } = useProfile();

@@ -1,12 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+//* Libraries Imports
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+//* Services Imports
 import { supabase } from "@/hooks/supabase";
 
-export default function DashboardAuthGuard({ children }: { children: ReactNode }) {
+//* Types Imports
+import type { ReactNode } from "react";
+
+export function DashboardAuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 

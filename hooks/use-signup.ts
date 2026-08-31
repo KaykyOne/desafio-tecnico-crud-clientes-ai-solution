@@ -1,9 +1,11 @@
 "use client";
 
+//* Libraries Imports
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+//* Services Imports
 import { supabase } from "./supabase";
 
 type SignupInput = {
@@ -29,7 +31,9 @@ export function useSignup() {
       if (error) {
         const isAlreadyRegistered = error.message.toLowerCase().includes("already registered");
         toast.error(isAlreadyRegistered ? "Esse e-mail já está cadastrado" : "Não foi possível criar sua conta", {
-          description: isAlreadyRegistered ? "Tente entrar ou recuperar sua senha." : "Confira os dados e tente novamente.",
+          description: isAlreadyRegistered
+            ? "Tente entrar ou recuperar sua senha."
+            : "Confira os dados e tente novamente.",
         });
         console.error("Erro ao cadastrar usuário:", error.message);
         return;

@@ -1,22 +1,22 @@
 "use client";
 
+//* Components Imports
+import Badge from "@/components/ui/badge";
+import Button from "@/components/ui/button";
+
+import { TaskTimerDisplay } from "./task-timer-display";
+
 //* Libraries Imports
-import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 import { ArrowRightLeft, CalendarDays, Clock3, Pencil, Play, Square, Timer, Trash2, User } from "lucide-react";
 
-//* Components Imports
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-
 //* Types Imports
+import type { DraggableAttributes, DraggableSyntheticListeners } from "@dnd-kit/core";
 import type { TaskPriority, TaskRecord } from "@/hooks/use-tasks";
 
 //* Utils Imports
 import { formatDateLong } from "@/lib/format-date";
 import { formatDuration } from "@/lib/format-duration";
 import { cn } from "@/lib/utils";
-
-import TaskTimerDisplay from "./task-timer-display";
 
 /** Agrupado num prop só porque atravessa 4 níveis até chegar no card. */
 export type TaskTimerProps = {
@@ -71,7 +71,7 @@ const priorityDividerStyles: Record<TaskPriority, string> = {
 // variantes da prioridade "low", que já são feitas pra esse contraste.
 const runningCardStyle = "border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white";
 
-export default function TaskCard({
+export function TaskCard({
   task,
   clientName,
   isDragging,
@@ -193,50 +193,50 @@ export default function TaskCard({
           )}
 
           <div className="flex items-center">
-          {/* Os botões vivem dentro do elemento que carrega os listeners de arrasto, então o
+            {/* Os botões vivem dentro do elemento que carrega os listeners de arrasto, então o
               stopPropagation é explícito — sem ele o clique compete com a ativação do sensor. */}
-          {onQuickEdit && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.stopPropagation();
-                onQuickEdit(task);
-              }}
-              aria-label={`Mover ${task.title} ou alterar prioridade`}
-            >
-              <ArrowRightLeft />
-            </Button>
-          )}
-          {onEdit && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.stopPropagation();
-                onEdit(task);
-              }}
-              aria-label={`Editar ${task.title}`}
-            >
-              <Pencil />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(task);
-              }}
-              aria-label={`Excluir ${task.title}`}
-            >
-              <Trash2 />
-            </Button>
-          )}
+            {onQuickEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onQuickEdit(task);
+                }}
+                aria-label={`Mover ${task.title} ou alterar prioridade`}
+              >
+                <ArrowRightLeft />
+              </Button>
+            )}
+            {onEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit(task);
+                }}
+                aria-label={`Editar ${task.title}`}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(task);
+                }}
+                aria-label={`Excluir ${task.title}`}
+              >
+                <Trash2 />
+              </Button>
+            )}
           </div>
         </div>
       )}

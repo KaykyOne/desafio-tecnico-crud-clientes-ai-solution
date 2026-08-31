@@ -1,8 +1,9 @@
 //* Components Imports
-import LabelSkeleton from "@/components/label-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton";
 
-export default function SettingsSkeleton() {
+import { LabelSkeleton } from "@/components/label-skeleton";
+
+export function SettingsSkeleton() {
   return (
     <div
       aria-busy="true"

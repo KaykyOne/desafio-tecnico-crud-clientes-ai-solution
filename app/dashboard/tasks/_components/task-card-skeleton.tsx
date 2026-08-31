@@ -1,8 +1,9 @@
 //* Components Imports
-import CardSkeleton from "@/components/card-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton";
 
-export default function TaskCardSkeleton() {
+import { CardSkeleton } from "@/components/card-skeleton";
+
+export function TaskCardSkeleton() {
   return (
     <div aria-hidden="true" className="relative">
       <CardSkeleton lines={2} className="min-h-32 shadow-sm" />

@@ -1,26 +1,27 @@
 "use client";
 
+//* Components Imports
+import Button from "@/components/ui/button";
+
+import "./_components/calendar-theme.css";
+import { CalendarToolbar } from "./_components/calendar-toolbar";
+import { CardSkeleton } from "@/components/card-skeleton";
+import { DeleteEventoDialog } from "./_components/delete-evento-dialog";
+import { EventoFormDialog } from "./_components/evento-form-dialog";
+
 //* Libraries Imports
 import { useMemo, useState } from "react";
 import { format, getDay, parse, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Plus } from "lucide-react";
 import { Calendar, dateFnsLocalizer, Views, type SlotInfo, type View } from "react-big-calendar";
-
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "./_components/calendar-theme.css";
-
-//* Components Imports
-import CardSkeleton from "@/components/card-skeleton";
-import { Button } from "@/components/ui/button";
 
 //* Hooks Imports
 import { useClients } from "@/hooks/use-clients";
 import { useEventos, type EventoRecord } from "@/hooks/use-eventos";
 
-import CalendarToolbar from "./_components/calendar-toolbar";
-import DeleteEventoDialog from "./_components/delete-evento-dialog";
-import EventoFormDialog from "./_components/evento-form-dialog";
+//* Types Imports
 import type { CalendarEvent } from "./_components/types";
 
 const locales = { "pt-BR": ptBR };
@@ -69,7 +70,7 @@ export default function AgendaPage() {
         allDay: evento.dia_inteiro,
         resource: evento,
       })),
-    [eventos]
+    [eventos],
   );
 
   function openCreateDialog(range?: { start: Date; end: Date } | null) {
@@ -106,29 +107,32 @@ export default function AgendaPage() {
           <h1 className="text-3xl font-bold tracking-[-0.05em] text-foreground">Eventos</h1>
           <p className="mt-2 text-sm text-muted-foreground">Organize compromissos, reuniões e prazos.</p>
         </div>
-        <Button type="button" className="h-11 px-4 font-bold" onClick={() => openCreateDialog()}><Plus />Novo evento</Button>
+        <Button type="button" className="h-11 px-4 font-bold" onClick={() => openCreateDialog()}>
+          <Plus />
+          Novo evento
+        </Button>
       </div>
 
       <div className="min-h-[36rem] flex-1">
         {isLoading ? (
           <CardSkeleton lines={10} className="h-full min-h-[36rem] p-6" />
         ) : (
-        <Calendar
-          localizer={localizer}
-          culture="pt-BR"
-          messages={messages}
-          events={calendarEvents}
-          view={view}
-          date={date}
-          onView={setView}
-          onNavigate={setDate}
-          selectable
-          popup
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          components={{ toolbar: CalendarToolbar }}
-          style={{ height: "100%" }}
-        />
+          <Calendar
+            localizer={localizer}
+            culture="pt-BR"
+            messages={messages}
+            events={calendarEvents}
+            view={view}
+            date={date}
+            onView={setView}
+            onNavigate={setDate}
+            selectable
+            popup
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+            components={{ toolbar: CalendarToolbar }}
+            style={{ height: "100%" }}
+          />
         )}
       </div>
 
@@ -147,7 +151,9 @@ export default function AgendaPage() {
         open={Boolean(deletingEvento)}
         titulo={deletingEvento?.titulo ?? ""}
         isDeleting={Boolean(deletingId)}
-        onOpenChange={(open) => { if (!open) setDeletingEvento(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeletingEvento(null);
+        }}
         onConfirm={() => (deletingEvento ? deleteEvento(deletingEvento.id) : Promise.resolve(false))}
       />
     </section>

@@ -1,9 +1,11 @@
 "use client";
 
+//* Libraries Imports
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+//* Services Imports
 import { supabase } from "./supabase";
 
 export type ProfileFormData = {

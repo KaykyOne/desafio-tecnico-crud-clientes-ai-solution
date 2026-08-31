@@ -5,7 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { get, post, remove, upsertIgnoring } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
+
+//* Utils Imports
+import { getApiErrorMessage, isUniqueViolation } from "@/lib/api-error";
 
 export type FinanceiroTipo = "gasto" | "gasto_fixo" | "ganho";
 
@@ -35,7 +39,8 @@ export type FinanceiroInput = {
 
 export type PeriodFilter = { mode: "month"; month: string } | { mode: "range"; start: string; end: string };
 
-const SELECT_COLUMNS = "id, user_id, data, tipo, valor, descricao, cliente_id, gasto_fixo_id, banco_id, fitid, created_at";
+const TABLE = "financeiro";
+const SELECT_COLUMNS = "id,user_id,data,tipo,valor,descricao,cliente_id,gasto_fixo_id,banco_id,fitid,created_at";
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -56,64 +61,49 @@ export function getPeriodRange(period: PeriodFilter) {
   return { start, end };
 }
 
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = String(error.message);
-    const code = "code" in error && error.code ? ` (${String(error.code)})` : "";
-    return `${message}${code}`;
-  }
-
-  return fallback;
-}
-
-function isUniqueViolation(error: unknown) {
-  return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
+/** Últimos `days` dias contando hoje, no formato que o `PeriodFilter` espera. */
+export function getLastDaysPeriod(days: number): PeriodFilter {
+  const end = new Date();
+  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - (days - 1));
+  const toIso = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  return { mode: "range", start: toIso(start), end: toIso(end) };
 }
 
 function duplicateKey(data: string, valor: number, descricao: string) {
   return `${data}::${valor.toFixed(2)}::${descricao.trim().toLowerCase()}`;
 }
 
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Sua sessão expirou. Entre novamente.");
-  }
-
-  return data.user.id;
-}
-
-export function useFinanceiro() {
+export function useFinanceiro(initialPeriod?: PeriodFilter) {
   const [allRecords, setAllRecords] = useState<FinanceiroRecord[]>([]);
   const [tipoFilter, setTipoFilter] = useState<FinanceiroTipo | "all">("all");
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ mode: "month", month: getCurrentMonthValue() });
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>(
+    initialPeriod ?? { mode: "month", month: getCurrentMonthValue() },
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Fetched once per period (not per tipo), so cards agrupados por termo sempre veem todos os tipos do período.
+  // Buscado por período (não por tipo), pra que os cards agrupados por termo vejam todos os tipos.
   const fetchRecords = useCallback(async () => {
     setIsLoading(true);
 
     try {
       const userId = await getAuthenticatedUserId();
       const { start, end } = getPeriodRange(periodFilter);
-      const { data, error } = await supabase
-        .from("financeiro")
-        .select(SELECT_COLUMNS)
-        .eq("user_id", userId)
-        .gte("data", start)
-        .lte("data", end)
-        .order("data", { ascending: false })
-        .order("created_at", { ascending: false });
+      const data = await get<FinanceiroRecord>(TABLE, {
+        select: SELECT_COLUMNS,
+        filters: { user_id: userId, data: { gte: start, lte: end } },
+        order: [
+          { column: "data", ascending: false },
+          { column: "created_at", ascending: false },
+        ],
+      });
 
-      if (error) throw error;
-      setAllRecords((data ?? []) as FinanceiroRecord[]);
+      setAllRecords(data);
     } catch (error) {
       toast.error("Não foi possível carregar o financeiro", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao listar lançamentos financeiros:", error);
     } finally {
@@ -123,7 +113,7 @@ export function useFinanceiro() {
 
   const records = useMemo(
     () => (tipoFilter === "all" ? allRecords : allRecords.filter((record) => record.tipo === tipoFilter)),
-    [allRecords, tipoFilter]
+    [allRecords, tipoFilter],
   );
 
   useEffect(() => {
@@ -137,13 +127,8 @@ export function useFinanceiro() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("financeiro").insert({
-        ...input,
-        descricao: input.descricao.trim() || null,
-        user_id: userId,
-      });
+      await post(TABLE, { ...input, descricao: input.descricao.trim() || null, user_id: userId });
 
-      if (error) throw error;
       await fetchRecords();
       toast.success("Lançamento cadastrado");
       return true;
@@ -153,8 +138,8 @@ export function useFinanceiro() {
         {
           description: isUniqueViolation(error)
             ? "Essa transação do extrato já está no financeiro."
-            : getSupabaseErrorMessage(error, "Confira os dados e tente novamente."),
-        }
+            : getApiErrorMessage(error, "Confira os dados e tente novamente."),
+        },
       );
       console.error("Erro ao cadastrar lançamento financeiro:", error);
       return false;
@@ -173,23 +158,19 @@ export function useFinanceiro() {
       const minDate = dates.reduce((min, date) => (date < min ? date : min));
       const maxDate = dates.reduce((max, date) => (date > max ? date : max));
 
-      const { data, error } = await supabase
-        .from("financeiro")
-        .select("data, valor, descricao")
-        .eq("user_id", userId)
-        .gte("data", minDate)
-        .lte("data", maxDate);
-
-      if (error) throw error;
+      const data = await get<Pick<FinanceiroRecord, "data" | "valor" | "descricao">>(TABLE, {
+        select: "data,valor,descricao",
+        filters: { user_id: userId, data: { gte: minDate, lte: maxDate } },
+      });
 
       const existingKeys = new Set(
-        (data ?? []).map((record) => duplicateKey(record.data, record.valor, record.descricao ?? ""))
+        data.map((record) => duplicateKey(record.data, record.valor, record.descricao ?? "")),
       );
 
       return inputs.filter((input) => existingKeys.has(duplicateKey(input.data, input.valor, input.descricao)));
     } catch (error) {
       toast.error("Não foi possível checar lançamentos duplicados", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao checar lançamentos duplicados:", error);
       return [];
@@ -205,23 +186,22 @@ export function useFinanceiro() {
     try {
       const userId = await getAuthenticatedUserId();
       const rows = inputs.map((input) => ({ ...input, descricao: input.descricao.trim() || null, user_id: userId }));
-      const { data, error } = await supabase
-        .from("financeiro")
-        .upsert(rows, { onConflict: "user_id,fitid", ignoreDuplicates: true })
-        .select("id");
+      const data = await upsertIgnoring<{ id: string }>(TABLE, rows, { onConflict: "user_id,fitid", select: "id" });
 
-      if (error) throw error;
       await fetchRecords();
 
-      const inserted = data?.length ?? 0;
+      const inserted = data.length;
       const skipped = rows.length - inserted;
       toast.success(`${inserted} lançamento${inserted === 1 ? "" : "s"} importado${inserted === 1 ? "" : "s"}`, {
-        description: skipped > 0 ? `${skipped} já estava${skipped === 1 ? "" : "m"} no financeiro e ${skipped === 1 ? "foi ignorado" : "foram ignorados"}.` : undefined,
+        description:
+          skipped > 0
+            ? `${skipped} já estava${skipped === 1 ? "" : "m"} no financeiro e ${skipped === 1 ? "foi ignorado" : "foram ignorados"}.`
+            : undefined,
       });
       return { inserted, skipped };
     } catch (error) {
       toast.error("Não foi possível importar os lançamentos", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao importar lançamentos do OFX:", error);
       return { inserted: 0, skipped: 0 };
@@ -235,15 +215,14 @@ export function useFinanceiro() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("financeiro").delete().eq("id", id).eq("user_id", userId);
+      await remove(TABLE, { id, user_id: userId });
 
-      if (error) throw error;
       setAllRecords((current) => current.filter((record) => record.id !== id));
       toast.success("Lançamento excluído");
       return true;
     } catch (error) {
       toast.error("Não foi possível excluir o lançamento", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao excluir lançamento financeiro:", error);
       return false;
@@ -259,16 +238,15 @@ export function useFinanceiro() {
 
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("financeiro").delete().in("id", ids).eq("user_id", userId);
+      await remove(TABLE, { id: ids, user_id: userId });
 
-      if (error) throw error;
       const idSet = new Set(ids);
       setAllRecords((current) => current.filter((record) => !idSet.has(record.id)));
       toast.success(`${ids.length} lançamento${ids.length === 1 ? "" : "s"} excluído${ids.length === 1 ? "" : "s"}`);
       return true;
     } catch (error) {
       toast.error("Não foi possível excluir os lançamentos", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao excluir lançamentos financeiros em lote:", error);
       return false;

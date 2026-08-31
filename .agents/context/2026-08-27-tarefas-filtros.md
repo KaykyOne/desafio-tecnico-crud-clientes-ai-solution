@@ -2,7 +2,7 @@
 
 ## Resumo
 
-O Kanban ganhou uma barra de filtros acima do quadro, com três filtros: **cliente**, **prioridade** e **semana de entrega**. Cliente e prioridade são de múltipla escolha com busca (padrão *faceted filter* do shadcn: Popover + Command); a semana é um navegador com setas. O componente foi desenhado pra receber filtros novos sem reestruturação.
+O Kanban ganhou uma barra de filtros acima do quadro, com três filtros: **cliente**, **prioridade** e **semana de entrega**. Cliente e prioridade são de múltipla escolha com busca (padrão _faceted filter_ do shadcn: Popover + Command); a semana é um navegador com setas. O componente foi desenhado pra receber filtros novos sem reestruturação.
 
 ## Arquivos alterados
 

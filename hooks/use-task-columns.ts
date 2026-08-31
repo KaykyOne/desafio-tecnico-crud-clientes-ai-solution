@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 //* Services Imports
-import { supabase } from "./supabase";
+import { get, patch, post, remove, upsert } from "@/services/api-service";
+import { getAuthenticatedUserId } from "@/services/auth-service";
+
+//* Utils Imports
+import { getApiErrorMessage, isForeignKeyViolation } from "@/lib/api-error";
 
 export type TaskColumnRecord = {
   id: string;
@@ -18,17 +22,6 @@ export type TaskColumnRecord = {
   updated_at: string;
 };
 
-function getSupabaseErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "message" in error) return String(error.message);
-  return fallback;
-}
-
-async function getAuthenticatedUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
-  return data.user.id;
-}
-
 export function useTaskColumns() {
   const [columns, setColumns] = useState<TaskColumnRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,16 +31,15 @@ export function useTaskColumns() {
     setIsLoading(true);
     try {
       const userId = await getAuthenticatedUserId();
-      const { data, error } = await supabase
-        .from("task_columns")
-        .select("id, user_id, key, name, color, position, created_at, updated_at")
-        .eq("user_id", userId)
-        .order("position", { ascending: true });
-      if (error) throw error;
-      setColumns((data ?? []) as TaskColumnRecord[]);
+      const data = await get<TaskColumnRecord>("task_columns", {
+        select: "id,user_id,key,name,color,position,created_at,updated_at",
+        filters: { user_id: userId },
+        order: [{ column: "position", ascending: true }],
+      });
+      setColumns(data);
     } catch (error) {
       toast.error("Não foi possível carregar as colunas", {
-        description: getSupabaseErrorMessage(error, "Tente atualizar a página novamente."),
+        description: getApiErrorMessage(error, "Tente atualizar a página novamente."),
       });
       console.error("Erro ao listar colunas de tarefas:", error);
     } finally {
@@ -72,19 +64,18 @@ export function useTaskColumns() {
     try {
       const userId = await getAuthenticatedUserId();
       const position = columns.reduce((highest, column) => Math.max(highest, column.position), -1) + 1;
-      const { error } = await supabase.from("task_columns").insert({
+      await post("task_columns", {
         user_id: userId,
         key: crypto.randomUUID(),
         name: normalizedName,
         position,
       });
-      if (error) throw error;
       await fetchColumns();
       toast.success("Coluna criada");
       return true;
     } catch (error) {
       toast.error("Não foi possível criar a coluna", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao criar coluna de tarefas:", error);
       return false;
@@ -103,12 +94,7 @@ export function useTaskColumns() {
     setIsSaving(true);
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase
-        .from("task_columns")
-        .update({ name: normalizedName })
-        .eq("id", id)
-        .eq("user_id", userId);
-      if (error) throw error;
+      await patch("task_columns", { name: normalizedName }, { id: id, user_id: userId });
       setColumns((current) =>
         current.map((column) => (column.id === id ? { ...column, name: normalizedName } : column)),
       );
@@ -116,7 +102,7 @@ export function useTaskColumns() {
       return true;
     } catch (error) {
       toast.error("Não foi possível renomear a coluna", {
-        description: getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+        description: getApiErrorMessage(error, "Tente novamente em alguns instantes."),
       });
       console.error("Erro ao renomear coluna de tarefas:", error);
       return false;
@@ -129,19 +115,18 @@ export function useTaskColumns() {
     setIsSaving(true);
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("task_columns").delete().eq("id", id).eq("user_id", userId);
-      if (error) throw error;
+      await remove("task_columns", { id: id, user_id: userId });
       setColumns((current) => current.filter((column) => column.id !== id));
       toast.success("Coluna excluída");
       return true;
     } catch (error) {
-      const isForeignKeyError = error && typeof error === "object" && "code" in error && error.code === "23503";
+      const isForeignKeyError = isForeignKeyViolation(error);
       toast.error(
         isForeignKeyError ? "Não é possível excluir uma coluna com tarefas" : "Não foi possível excluir a coluna",
         {
           description: isForeignKeyError
             ? "Mova ou exclua as tarefas desta coluna antes de removê-la."
-            : getSupabaseErrorMessage(error, "Tente novamente em alguns instantes."),
+            : getApiErrorMessage(error, "Tente novamente em alguns instantes."),
         },
       );
       console.error("Erro ao excluir coluna de tarefas:", error);
@@ -162,7 +147,8 @@ export function useTaskColumns() {
     setColumns(reorderedColumns);
     try {
       const userId = await getAuthenticatedUserId();
-      const { error } = await supabase.from("task_columns").upsert(
+      await upsert(
+        "task_columns",
         reorderedColumns.map(({ id, key, name, color, position }) => ({
           id,
           user_id: userId,
@@ -173,12 +159,11 @@ export function useTaskColumns() {
         })),
         { onConflict: "id" },
       );
-      if (error) throw error;
       return true;
     } catch (error) {
       setColumns(previousColumns);
       toast.error("Não foi possível reordenar as colunas", {
-        description: getSupabaseErrorMessage(error, "A ordem anterior foi restaurada."),
+        description: getApiErrorMessage(error, "A ordem anterior foi restaurada."),
       });
       console.error("Erro ao reordenar colunas de tarefas:", error);
       return false;

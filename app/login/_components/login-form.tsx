@@ -1,17 +1,24 @@
 "use client";
 
-import type { FormEvent } from "react";
+//* Components Imports
+import Button from "@/components/ui/button";
+import Checkbox from "@/components/ui/checkbox";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+
+//* Libraries Imports
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+//* Hooks Imports
 import { useLogin } from "@/hooks/use-login";
+
+//* Types Imports
+import type { FormEvent } from "react";
 
 const REMEMBER_LOGIN_KEY = "clienteapp:remember-login";
 
-export default function LoginForm() {
+export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);

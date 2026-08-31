@@ -1,10 +1,11 @@
 //* Components Imports
-import CardSkeleton from "@/components/card-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton";
+
+import { CardSkeleton } from "@/components/card-skeleton";
 
 const tableColumnWidths = ["w-4/5", "w-3/4", "w-16", "w-2/3", "ml-auto w-16"];
 
-export default function ClientsSkeleton() {
+export function ClientsSkeleton() {
   return (
     <div aria-busy="true" aria-label="Carregando clientes" className="space-y-8">
       <div className="grid gap-4 md:grid-cols-3">
