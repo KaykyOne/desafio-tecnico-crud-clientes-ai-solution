@@ -2,12 +2,13 @@
 
 //* Components Imports
 import Button from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { FacetedFilter } from "./faceted-filter";
 import { WeekFilter } from "./week-filter";
 
 //* Libraries Imports
-import { ListFilter, X } from "lucide-react";
+import { ListFilter, Search, X } from "lucide-react";
 
 //* Types Imports
 import type { ClientRecord } from "@/hooks/use-clients";
@@ -42,6 +43,17 @@ export function TaskFilters({ value, clients, onChange }: TaskFiltersProps) {
         <ListFilter className="size-3.5" />
         Filtros
       </span>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Nome ou descrição..."
+          className="h-9 pl-9 pr-3"
+          value={value.searchText}
+          onChange={(e) => onChange({ ...value, searchText: e.target.value })}
+        />
+      </div>
 
       <FacetedFilter
         label="Cliente"
