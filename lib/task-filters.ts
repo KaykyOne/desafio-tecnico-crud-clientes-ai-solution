@@ -14,6 +14,8 @@ export type TaskFilterValue = {
   priorities: TaskPriority[];
   /** Domingo da semana filtrada, "YYYY-MM-DD". `null` = qualquer semana. */
   weekStart: string | null;
+  /** Busca por título ou descrição. */
+  searchText: string;
 };
 
 export const SEM_CLIENTE = "sem-cliente";
@@ -22,6 +24,7 @@ export const EMPTY_TASK_FILTERS: TaskFilterValue = {
   clienteIds: [],
   priorities: [],
   weekStart: null,
+  searchText: "",
 };
 
 export const taskPriorityLabels: Record<TaskPriority, string> = {
@@ -84,10 +87,22 @@ export function filterTasks(tasks: TaskRecord[], filters: TaskFilterValue) {
       if (task.due_date < filters.weekStart || task.due_date > end) return false;
     }
 
+    if (filters.searchText) {
+      const query = filters.searchText.toLowerCase();
+      const titleMatch = task.title.toLowerCase().includes(query);
+      const descriptionMatch = task.description?.toLowerCase().includes(query) ?? false;
+      if (!titleMatch && !descriptionMatch) return false;
+    }
+
     return true;
   });
 }
 
 export function countActiveFilters(filters: TaskFilterValue) {
-  return filters.clienteIds.length + filters.priorities.length + (filters.weekStart ? 1 : 0);
+  return (
+    filters.clienteIds.length +
+    filters.priorities.length +
+    (filters.weekStart ? 1 : 0) +
+    (filters.searchText ? 1 : 0)
+  );
 }

@@ -27,7 +27,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Plus, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 //* Hooks Imports
 import { useClients } from "@/hooks/use-clients";
@@ -85,6 +85,8 @@ export default function TasksPage() {
   const [quickEditTaskId, setQuickEditTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilterValue>(EMPTY_TASK_FILTERS);
   const [isManagingColumns, setIsManagingColumns] = useState(false);
+  const [boardHeight, setBoardHeight] = useState(60);
+  const resizeRef = useRef<HTMLDivElement>(null);
   // Mouse e toque separados de propósito: um PointerSensor único atenderia os dois pelo mesmo
   // caminho, e o `delay` que o toque precisa viraria uma espera de 220ms antes de todo arrasto no
   // desktop. Assim o mouse mantém o comportamento antigo e só o dedo precisa segurar — e a escolha
@@ -94,6 +96,38 @@ export default function TasksPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
     useSensor(KeyboardSensor),
   );
+
+  useEffect(() => {
+    const handleMouseDown = () => {
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!resizeRef.current) return;
+        const container = resizeRef.current.closest("section");
+        if (!container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const newHeight = Math.max(20, Math.min(90, ((e.clientY - containerRect.top) / containerRect.height) * 100));
+        setBoardHeight(newHeight);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "row-resize";
+      document.body.style.userSelect = "none";
+    };
+
+    const element = resizeRef.current;
+    if (element) {
+      element.addEventListener("mousedown", handleMouseDown);
+      return () => element.removeEventListener("mousedown", handleMouseDown);
+    }
+  }, []);
 
   function openCreateDialog() {
     setEditingTask(null);
@@ -193,7 +227,13 @@ export default function TasksPage() {
           isLoading={isLoadingTimer}
         />
         <TaskFilters value={filters} clients={clients} onChange={setFilters} />
-        <DndContext
+        <div
+          ref={resizeRef}
+          className="h-1 cursor-row-resize hover:bg-primary/20 transition-colors"
+          title="Arraste para redimensionar"
+        />
+        <div style={{ height: `calc(${boardHeight}% - 0.25rem)` }} className="min-h-0 flex-1">
+          <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
@@ -219,7 +259,8 @@ export default function TasksPage() {
               </div>
             ) : null}
           </DragOverlay>
-        </DndContext>
+          </DndContext>
+        </div>
         {quickEditTask && (
           <TaskQuickEditSheet
             task={quickEditTask}
